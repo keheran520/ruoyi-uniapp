@@ -14,7 +14,7 @@ interface BaseRequestConfig {
 }
 export interface RequestConfig extends BaseRequestConfig {
     /** 请求方式 */
-    method?: "OPTIONS" | "GET" | "HEAD" | "POST" | "PUT" | "DELETE" | "TRACE" | "CONNECT" | undefined
+    method?: "OPTIONS" | "GET" | "HEAD" | "POST" | "PUT" | "DELETE" | "CONNECT" | undefined
     /** 重新设置baseUrl */
     baseUrl?: string,
     /** 请求体参数 */

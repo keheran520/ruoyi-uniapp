@@ -52,6 +52,13 @@
       "style": {
         "navigationBarTitleText": "浏览文本"
       }
+    },
+    {
+    	"path" : "pages/common/detail",
+    	"style" : 
+    	{
+    		"navigationBarTitleText" : ""
+    	}
     }
   ],
   "subPackages": [
@@ -251,12 +258,12 @@
         "selectedIconPath": "static/images/tabbar/home_.png",
         "text": "应用中心"
       },
-      {
-        "pagePath": "pages/work",
-        "iconPath": "static/images/tabbar/work.png",
-        "selectedIconPath": "static/images/tabbar/work_.png",
-        "text": "工作台"
-      }, 
+//      {
+//        "pagePath": "pages/work",
+//        "iconPath": "static/images/tabbar/work.png",
+//        "selectedIconPath": "static/images/tabbar/work_.png",
+//        "text": "工作台"
+//      },
       // {
       //   "pagePath": "pages/template",
       //   "iconPath": "static/images/tabbar/work.png",

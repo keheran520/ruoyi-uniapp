@@ -224,11 +224,11 @@
 	$uni-spacing-row-lg: 15px;
 	$background-color: #fff;
 	$divide-line-color: #e5e5e5;
-	$avatar-width: 45px;
+	$avatar-width: 100px;
 	$avatar-border-radius: 5px;
 	$avatar-border-color: #eee;
 	$avatar-border-width: 1px;
-	$title-size: 16px;
+	$title-size: 24px;
 	$title-color: #3b4144;
 	$title-weight: normal;
 	$note-size: 12px;

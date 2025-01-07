@@ -14,19 +14,24 @@
     <uni-section title="应用中心" type="line"></uni-section>
     <view class="grid-body">
       <uni-list :border="true">
-        <uni-list-item title="列表左侧带略缩图" ellipsis="2" note="列表描述信息" thumb="https://qiniu-web-assets.dcloud.net.cn/unidoc/zh/unicloudlogo.png"
-                                              thumb-size="lg" rightText="右侧文字"></uni-list-item>
- 
+        <uni-list-chat v-for="item in EquipList" :title="item.eqName" :avatar="item.eqMapUrl" :note="item.eqMemo" link  @click="handleEquip(item)"></uni-list-chat>
+
       </uni-list>
     </view>
 	</view>
 </template>
 
 <script  setup>
+
 import {ref} from "vue";
 import modal from "@/plugins/modal";
+import {equipList} from "@/api/xcj/equip";
 
+
+// 租户列表
+const EquipList = ref({});
 const current=ref(0);
+
 const data= ref([{
     image: '/static/images/banner/banner01.jpg'
   },
@@ -46,6 +51,19 @@ function changeGrid(e) {
     duration: 1000
   });
 }
+function  getEquipment(){
+   equipList().then(res => {
+     EquipList.value = res.data;
+     // console.log(EquipList.value)
+   })
+}
+function handleEquip(item) {
+  // console.log(item);
+  uni.navigateTo({
+    url: '/pages/common/detail?id=' + item.id,
+  });
+}
+getEquipment();
 </script>
 
 <style>

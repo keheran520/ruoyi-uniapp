@@ -93,7 +93,11 @@
       disabled: {
 				type: Boolean,
 				default: false
-			}
+			},
+      border:{
+        type: Boolean,
+        default: true
+      },
 		},
 		created() {
 			this.last = `${this.collection}_last_selected_option_value`
@@ -300,6 +304,10 @@
     &--disabled{
       background-color: #f5f7fa;
       cursor: not-allowed;
+    }
+    &--border{
+      border: 1px solid $uni-border-3;
+      border-bottom: solid 1px $uni-border-3;
     }
 	}
 

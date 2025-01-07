@@ -142,22 +142,40 @@
   	//console.log('点击关闭')
   };
   function handleHelp() {
-	  uni.navigateTo({
-	  	url: '/pages_mine/pages/help/index'
-	  });
+	  // uni.navigateTo({
+	  // 	url: '/pages_mine/pages/help/index'
+	  // });
+    uni.showToast({
+      title: '模块建设中~',
+      mask: false,
+      icon:"none",
+      duration: 1000
+    });
   };
   function handleAbout() {
-	  uni.navigateTo({
-	  	url: '/pages_mine/pages/about/index'
-	  });
+	  // uni.navigateTo({
+	  // 	url: '/pages_mine/pages/about/index'
+	  // });
+    uni.showToast({
+      title: '模块建设中~',
+      mask: false,
+      icon:"none",
+      duration: 1000
+    });
   };
   function handleJiaoLiuQun() {
-	  uni.showToast({
-	    title: 'QQ群：133713780',
-	    mask: false,
-		icon:"none",
-	    duration: 1000
-	  });
+	  // uni.showToast({
+	  //   title: 'QQ群：133713780',
+	  //   mask: false,
+		// icon:"none",
+	  //   duration: 1000
+	  // });
+    uni.showToast({
+      title: '模块建设中~',
+      mask: false,
+      icon:"none",
+      duration: 1000
+    });
   };
   function handleBuilding() {
 	  uni.showToast({
@@ -183,7 +201,7 @@
 
     .header-section {
       padding: 15px 15px 45px 15px;
-      background-color: #3c96f3;
+      background-color: #c0c0c0;
       color: white;
 
       .login-tip {
