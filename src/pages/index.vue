@@ -1,75 +1,121 @@
 <template>
-  <view class="content">
-    <image class="logo" src="@/static/logo.png"></image>
-    <view class="text-area">
-      <text class="title">Hello RuoYi-Vue</text>
+  <view class="work-container">
+    <!-- 轮播图 -->
+    <uni-swiper-dot class="uni-swiper-dot-box" :info="data" :current="current" field="content">
+      <swiper class="swiper-box">
+        <swiper-item v-for="(item, index) in data" :key="index">
+          <view class="swiper-item" @click="clickBannerItem(item)">
+            <image :src="item.image" mode="aspectFill" :draggable="false" />
+          </view>
+        </swiper-item>
+      </swiper>
+    </uni-swiper-dot>
+    <!-- 宫格组件 -->
+    <uni-section title="应用中心" type="line"></uni-section>
+    <view class="grid-body">
+      <uni-list :border="true">
+        <uni-list-item title="列表左侧带略缩图" ellipsis="2" note="列表描述信息" thumb="https://qiniu-web-assets.dcloud.net.cn/unidoc/zh/unicloudlogo.png"
+                                              thumb-size="lg" rightText="右侧文字"></uni-list-item>
+ 
+      </uni-list>
     </view>
-    <view class="text-area">
-      <up-text type="primary" text="uview-plus"></up-text>
-    </view>
-    <view class="charts-box">
-      <qiun-data-charts type="column" :chartData="chartData" />
-    </view>
-  </view>
+	</view>
 </template>
 
-<script setup>
-import { ref, onMounted } from 'vue';
+<script  setup>
+import {ref} from "vue";
+import modal from "@/plugins/modal";
 
-const chartData = ref({});
+const current=ref(0);
+const data= ref([{
+    image: '/static/images/banner/banner01.jpg'
+  },
+  {
+    image: '/static/images/banner/banner02.jpg'
+  },
+  {
+    image: '/static/images/banner/banner03.jpg'
+  }
+]);
 
-onMounted(() => { getServerData() });
-
-function getServerData() {
-  // 模拟从服务器获取数据时的延时
-  setTimeout(() => {
-    let res = {
-      categories: ['2016', '2017', '2018', '2019', '2020', '2021'],
-      series: [
-        {
-          name: '目标值',
-          data: [35, 36, 31, 33, 13, 34],
-        },
-        {
-          name: '完成量',
-          data: [18, 27, 21, 24, 6, 28],
-        },
-      ],
-    };
-    chartData.value = JSON.parse(JSON.stringify(res));
-  }, 500);
+function changeGrid(e) {
+  modal.showToast({
+    title: '模块建设中',
+    mask: false,
+    icon:'loading',
+    duration: 1000
+  });
 }
 </script>
 
-<style scoped>
-.content {
+<style>
+page {
   display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  background-color: #fff;
+  min-height: 100%;
+  height: auto;
+}
+
+view {
+  font-size: 14px;
+  line-height: inherit;
+}
+
+.text {
+  text-align: center;
+  font-size: 26rpx;
+  margin-top: 10rpx;
+}
+
+.grid-item-box {
+  flex: 1;
+  /* #ifndef APP-NVUE */
+  display: flex;
+  /* #endif */
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  padding: 15px 0;
 }
 
-.logo {
-  height: 200rpx;
-  width: 200rpx;
-  margin-top: 200rpx;
-  margin-left: auto;
-  margin-right: auto;
-  margin-bottom: 50rpx;
-}
-
-.text-area {
-  display: flex;
-  justify-content: center;
-}
-
-.title {
-  font-size: 36rpx;
-  color: #8f8f94;
-}
-
-.charts-box {
+.uni-margin-wrap {
+  width: 690rpx;
   width: 100%;
-  height: 300px;
+;
+}
+.swiper {
+  height: 300rpx;
+}
+
+.swiper-box {
+  height: 150px;
+}
+
+.swiper-item {
+  /* #ifndef APP-NVUE */
+  display: flex;
+  /* #endif */
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: #fff;
+  height: 300rpx;
+  line-height: 300rpx;
+}
+
+@media screen and (min-width: 500px) {
+  .uni-swiper-dot-box {
+    width: 400px;
+    /* #ifndef APP-NVUE */
+    margin: 0 auto;
+    /* #endif */
+    margin-top: 8px;
+  }
+
+  .image {
+    width: 100%;
+  }
 }
 </style>

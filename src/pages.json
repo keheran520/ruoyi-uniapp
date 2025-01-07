@@ -13,8 +13,8 @@
     {
       "path": "pages/index",
       "style": {
-        "navigationBarTitleText": "若依移动端框架",
-        "navigationStyle": "custom"
+        "navigationBarTitleText": "应用中心"
+//        "navigationStyle": "custom"
       }
     },
     {
@@ -249,20 +249,20 @@
         "pagePath": "pages/index",
         "iconPath": "static/images/tabbar/home.png",
         "selectedIconPath": "static/images/tabbar/home_.png",
-        "text": "首页"
+        "text": "应用中心"
       },
       {
         "pagePath": "pages/work",
         "iconPath": "static/images/tabbar/work.png",
         "selectedIconPath": "static/images/tabbar/work_.png",
         "text": "工作台"
-      },
-      {
-        "pagePath": "pages/template",
-        "iconPath": "static/images/tabbar/work.png",
-        "selectedIconPath": "static/images/tabbar/work_.png",
-        "text": "模板"
-      },
+      }, 
+      // {
+      //   "pagePath": "pages/template",
+      //   "iconPath": "static/images/tabbar/work.png",
+      //   "selectedIconPath": "static/images/tabbar/work_.png",
+      //   "text": "模板"
+      // },
       {
         "pagePath": "pages/mine",
         "iconPath": "static/images/tabbar/mine.png",
