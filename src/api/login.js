@@ -16,7 +16,7 @@ export function login(data) {
       isToken: false,
       isEncrypt: true
     },
-    method: 'post',
+    method: 'POST',
     data: params
   });
 }
@@ -32,7 +32,7 @@ export function login(data) {
 //     headers: {
 //       isToken: false
 //     },
-//     method: 'post',
+//     method: 'POST',
 //     data: data
 //   })
 // }
@@ -44,7 +44,7 @@ export function register(data) {
     headers: {
       isToken: false
     },
-    method: 'post',
+    method: 'POST',
     data: data
   })
 }
@@ -53,7 +53,7 @@ export function register(data) {
 export function getInfo() {
   return request({
     url: '/system/user/getInfo',
-    method: 'get'
+    method: 'GET'
   })
 }
 
@@ -61,7 +61,7 @@ export function getInfo() {
 export function logout() {
   return request({
     url: '/auth/logout',
-    method: 'post'
+    method: 'POST'
   })
 }
 
@@ -72,7 +72,7 @@ export function getCodeImg() {
     headers: {
       isToken: false
     },
-    method: 'get',
+    method: 'GET',
     timeout: 20000
   })
 }
@@ -84,6 +84,6 @@ export function getTenantList(){
     headers: {
       isToken: false
     },
-    method: 'get'
+    method: 'GET'
   });
 }

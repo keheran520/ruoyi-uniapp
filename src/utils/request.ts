@@ -4,11 +4,16 @@ import { getToken } from '@/utils/auth'
 import errorCode from '@/utils/errorCode'
 import { toast, showConfirm, tansParams } from '@/utils/common'
 import { RequestConfig, ResponseData } from '@/types/request'
+import { encryptBase64, encryptWithAes, generateAesKey, decryptWithAes, decryptBase64 } from '@/utils/crypto';
+import { encrypt, decrypt } from '@/utils/jsencrypt';
 
+const encryptHeader = 'encrypt-key';
 let timeout = 10000
 const baseUrl = config.baseUrl
 const clientId = config.clientID;
-const request = <T>(config:RequestConfig):Promise<ResponseData<T>> => {
+const appEncrypt = config.appEncrypt;
+
+const request = <T>(config: RequestConfig):Promise<ResponseData<T>> => {
   // 是否需要设置 token
   const isToken = (config.headers || {}).isToken === false
   config.header = config.header || {}
@@ -22,6 +27,19 @@ const request = <T>(config:RequestConfig):Promise<ResponseData<T>> => {
     url = url.slice(0, -1)
     config.url = url
   }
+
+  // 是否需要加密
+  const isEncrypt = (config.headers || {}).isEncrypt === true;
+
+  if (appEncrypt) {
+    // 当开启参数加密
+    if (isEncrypt && (config.method === 'POST' || config.method === 'PUT')) {
+      // 生成一个 AES 密钥
+      const aesKey = generateAesKey();
+      config.header[encryptHeader] = encrypt(encryptBase64(aesKey));
+      config.data = typeof config.data === 'object' ? encryptWithAes(JSON.stringify(config.data), aesKey) : encryptWithAes(config.data, aesKey);
+    }
+  }
   return new Promise((resolve, reject) => {
     uni.request({
       method: config.method || 'GET',
@@ -31,14 +49,33 @@ const request = <T>(config:RequestConfig):Promise<ResponseData<T>> => {
       header: config.header,
       dataType: 'json'
     }).then(response => {
+      if (appEncrypt) {
+        // 加密后的 AES 秘钥
+        const keyStr = response.header[encryptHeader];
+        // 加密
+        if (keyStr != null && keyStr != '') {
+          const data = response.data;
+          // 请求体 AES 解密
+          const base64Str = decrypt(keyStr);
+          // base64 解码 得到请求头的 AES 秘钥
+          const aesKey = decryptBase64(base64Str.toString());
+          // aesKey 解码 data
+          const decryptData = decryptWithAes(data as string, aesKey);
+          // 将结果 (得到的是 JSON 字符串) 转为 JSON
+          response.data = JSON.parse(decryptData);
+        }
+      }
+
       /* let [error, res] = response
        if (error) {
          toast('后端接口连接异常')
          reject('后端接口连接异常')
          return
        } */
+
+
       const res = response
-      const data:ResponseData<T> = res.data as ResponseData<T>
+      const data: ResponseData<T> = res.data as ResponseData<T>
       const code = data.code || 200
       // @ts-ignore
       const msg:string = errorCode[code] || data.msg || errorCode['default']
