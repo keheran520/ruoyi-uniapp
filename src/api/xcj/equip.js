@@ -3,7 +3,7 @@ import request from '@/utils/request'
 export function equipList(data) {
     return request({
         url: '/xcj/equip/listall',
-        method: 'get',
+        method: 'GET',
         params: data
     })
 }
@@ -15,6 +15,6 @@ export function equipList(data) {
 export function equipInfo(id) {
     return request({
         url:`/xcj/equip/${id}`,
-        method: 'get'
+        method: 'GET'
     });
 }

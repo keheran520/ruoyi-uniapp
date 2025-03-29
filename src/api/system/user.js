@@ -9,7 +9,7 @@ export function updateUserPwd(oldPassword, newPassword) {
   }
   return request({
     url: '/system/user/profile/updatePwd',
-    method: 'put',
+    method: 'PUT',
     params: data
   })
 }
@@ -18,7 +18,7 @@ export function updateUserPwd(oldPassword, newPassword) {
 export function getUserProfile() {
   return request({
     url: '/system/user/profile',
-    method: 'get'
+    method: 'GET'
   })
 }
 
@@ -26,7 +26,7 @@ export function getUserProfile() {
 export function updateUserProfile(data) {
   return request({
     url: '/system/user/profile',
-    method: 'put',
+    method: 'PUT',
     data: data
   })
 }

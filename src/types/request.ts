@@ -2,6 +2,8 @@ interface BaseRequestConfig {
     headers?: {
         /** 是否在请求头中添加token 默认是 */
         isToken: boolean
+        /** 请求是否需要加密 默认否 */
+        isEncrypt: boolean;
     },
     /** 请求头配置 */
     header?: any,
