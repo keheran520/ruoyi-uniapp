@@ -63,7 +63,7 @@ const user: Module<UserState, UserState> = {
         getInfo().then((res: any) => {
 		const data=res.data;
           const user = data.user
-          const avatar = (user == null || user.avatar == "" || user.avatar == null) ? "/static/images/profile.jpg" : baseUrl + user.avatar
+          const avatar = (user == null || user.avatar == "" || user.avatar == null) ? "/static/images/profile.jpg" : user.avatar
           const username = (user == null || user.userName == "" || user.userName == null) ? "" : user.userName
           if (data.roles && data.roles.length > 0) {
             commit('SET_ROLES', data.roles)
