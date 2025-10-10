@@ -272,7 +272,7 @@ export default {
 						uploadAvatar(data).then(response => {
 							//store.commit('SET_AVATAR', response.imgUrl)
 							/*cloud*/
-							store.commit('SET_AVATAR', baseUrl + response.imgUrl)
+							store.commit('SET_AVATAR', response.imgUrl)
 							uni.showToast({ title: "修改成功", icon: 'success' })
 							uni.$emit('refresh');
 							uni.navigateBack();
