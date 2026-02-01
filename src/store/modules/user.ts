@@ -20,6 +20,7 @@ const user: Module<UserState, UserState> = {
   mutations: {
     SET_INFO: (state, info: string) => {
       state.info = info
+      storage.set(constant.info, info)
     },
     SET_TOKEN: (state, token: string) => {
       state.token = token

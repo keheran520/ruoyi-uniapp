@@ -514,6 +514,8 @@ async function fetchWebsiteConfig(tenantId) {
         copyright: res.data.copyright || '',
         icp: res.data.icp || ''
       };
+      // 保存到 store 的 website 模块
+      store.dispatch('SetWebsiteConfig', websiteConfig.value);
       // 更新 globalConfig
       if (res.data.name) {
         globalConfig.value.appInfo.title = res.data.name;

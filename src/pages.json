@@ -9,7 +9,9 @@
       "geek-(.*)": "@/components/geek-xd/components/geek-$1/geek-$1.vue",
       "gx-(.*)": "@/components/geek-xd/components/geek-$1/geek-$1.vue",
       "^SafeArea$": "@/components/SafeArea/SafeArea.vue",
-      "^tac-captcha$": "@/components/tac-captcha/tac-captcha.vue"
+      "^tac-captcha$": "@/components/tac-captcha/tac-captcha.vue",
+      "^CustomCell$": "@/components/CustomCell/CustomCell.vue",
+      "^CustomCellGroup$": "@/components/CustomCellGroup/CustomCellGroup.vue"
     }
   },
   "pages": [
@@ -43,7 +45,8 @@
     {
       "path": "pages/mine",
       "style": {
-        "navigationBarTitleText": "我的"
+        "navigationBarTitleText": "我的",
+        "navigationStyle": "custom"
       }
     },
     {
@@ -56,12 +59,6 @@
       "path": "pages/common/textview/index",
       "style": {
         "navigationBarTitleText": "浏览文本"
-      }
-    },
-    {
-      "path": "pages/common/captcha/index",
-      "style": {
-        "navigationBarTitleText": "安全验证"
       }
     },
     {

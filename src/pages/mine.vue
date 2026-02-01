@@ -1,316 +1,256 @@
 <template>
-  <view class="mine-container">
-    <!-- 顶部安全区域 -->
-    <SafeArea position="top" backgroundColor="transparent" />
-    
-    <!-- 自定义顶部导航栏 (参考小红书) -->
-    <view class="custom-navbar">
-      <view class="navbar-left" @click="showDrawer = true">
-        <u-icon name="list" color="#fff" size="24"></u-icon>
-      </view>
-      <view class="navbar-center">
-        <text class="navbar-title">我的</text>
-      </view>
-      <view class="navbar-right">
-        <u-icon name="scan" color="#fff" size="24" @click="handleScan"></u-icon>
+  <view class="mine-page">
+    <!-- 固定顶部导航栏 -->
+    <view class="fixed-navbar" :class="{'scrolled': isScrolled}" :style="{background: navbarBg}">
+      <!-- 非H5端顶部安全区域 -->
+      <!-- #ifndef H5 -->
+      <view :style="{height: statusBarHeight + 'px'}"></view>
+      <!-- #endif -->
+      
+      <view class="navbar-content">
+        <view class="navbar-left" @click="showDrawer = true">
+          <u-icon name="list" :color="isScrolled ? '#333' : '#fff'" size="24"></u-icon>
+        </view>
+        
+        <!-- 滚动后显示的头像 -->
+        <transition name="fade">
+          <view class="navbar-avatar" v-if="isScrolled" @click="handleToInfo">
+            <image class="avatar-img" :src="userInfo?.avatar || '/static/images/profile.jpg'" mode="aspectFill"></image>
+          </view>
+        </transition>
+        
+        <view class="navbar-right" @click="handleScan">
+          <u-icon name="scan" :color="isScrolled ? '#333' : '#fff'" size="24"></u-icon>
+        </view>
       </view>
     </view>
     
-    <!-- 沉浸式顶部区域 (借鉴小红书毛玻璃背景) -->
-    <view class="xhs-header">
-      <!-- 背景图层 -->
-      <image 
-        class="bg-blur" 
-        :src="userBgImage || '/static/images/profile.jpg'" 
-        mode="aspectFill"
-      ></image>
-      <view class="bg-dark-mask"></view>
-      
-      <!-- 右上角签到按钮 (保留) -->
-      <view class="checkin-float-btn" @click="handleCheckin" :class="{'signed': isSigned}">
-        <u-icon name="calendar" :color="isSigned ? '#D4B07B' : '#fff'" size="16"></u-icon>
-        <text>{{ isSigned ? '已签到' : '签到' }}</text>
-      </view>
-      
-      <!-- 用户信息区 (左对齐) -->
-      <view class="user-info-section">
-        <view class="avatar-row">
-          <view class="avatar-wrapper" @click="handleToInfo">
-            <image 
-              class="avatar" 
-              :src="userInfo?.avatar || '/static/images/profile.jpg'"
-              mode="aspectFill"
-            ></image>
-            <view class="edit-badge">
-              <u-icon name="plus" color="#333" size="16"></u-icon>
+    <!-- 可滚动内容 -->
+    <scroll-view 
+      class="scroll-content" 
+      scroll-y 
+      @scroll="onScroll"
+      :style="{height: scrollHeight + 'px'}"
+    >
+      <!-- 头部区域 -->
+      <view class="header-section">
+        <image class="bg-image" :src="userBgImage || '/static/images/profile.jpg'" mode="aspectFill"></image>
+        <view class="bg-mask"></view>
+        
+        <!-- 用户信息 -->
+        <view class="user-info">
+          <view class="avatar-row">
+            <view class="avatar-box" @click="handleToInfo">
+              <image class="avatar" :src="userInfo?.avatar || '/static/images/profile.jpg'" mode="aspectFill"></image>
+              <view class="edit-icon">
+                <u-icon name="plus" color="#333" size="14"></u-icon>
+              </view>
+            </view>
+            
+            <!-- 签到按钮（与头像同一行） -->
+            <view class="checkin-btn" @click="handleCheckin" :class="{'signed': isSigned}">
+              <u-icon name="calendar" :color="isSigned ? '#D4B07B' : '#fff'" size="16"></u-icon>
+              <text>{{ isSigned ? '已签到' : '签到' }}</text>
             </view>
           </view>
-        </view>
-        
-        <view class="name-id-row">
-          <text class="nickname-text">{{ userInfo?.nickname || userInfo?.userName || '·' }}</text>
-        </view>
-        
-        <view class="redbook-id-row">
-          <text class="id-label">小红书号:</text>
-          <text class="id-value">{{ userInfo?.userId || '5432102799' }}</text>
-          <view class="level-tag" @click.stop="handleToLevel">
-            <u-icon name="level" color="#5A4017" size="10"></u-icon>
+          
+          <view class="nickname">{{ userInfo?.nickname || userInfo?.userName || 'xxxxxxxxx' }}</view>
+          <view class="user-id">
+            <text>用户ID: {{ userInfo?.userId || 'xxxxxxxxx' }}</text>
+          </view>
+          <view class="bio" @click="handleEditSignature">
+            <text>{{ userSignature || '点击这里,填写简介' }}</text>
           </view>
         </view>
         
-        <view class="bio-row" @click="handleEditSignature">
-          <text class="bio-text">{{ userSignature || '点击这里,填写简介' }}</text>
+        <!-- 统计数据 -->
+        <view class="stats">
+          <view class="stat-item" @click="handleToMyWorks">
+            <text class="num">{{ creationData.worksCount || 14 }}</text>
+            <text class="label">关注</text>
+          </view>
+          <view class="stat-item" @click="handleToFans">
+            <text class="num">{{ creationData.fansCount || 8 }}</text>
+            <text class="label">粉丝</text>
+          </view>
+          <view class="stat-item" @click="handleToLikes">
+            <text class="num">{{ creationData.likesCount || 36 }}</text>
+            <text class="label">获赞与收藏</text>
+          </view>
         </view>
         
-        <view class="gender-ip-row">
-          <view class="gender-icon" v-if="userInfo?.sex">
-            <u-icon :name="userInfo?.sex === '1' ? 'man' : 'woman'" color="#fff" size="10"></u-icon>
+        <!-- 操作按钮 -->
+        <view class="action-btns">
+          <view class="edit-btn" @click="handleToEditInfo">
+            <text>编辑资料</text>
+          </view>
+          <view class="setting-btn" @click="handleToSetting">
+            <u-icon name="setting" color="#fff" size="20"></u-icon>
           </view>
         </view>
       </view>
       
-      <!-- 数据统计行 -->
-      <view class="stats-row">
-        <view class="stat-item" @click="handleToMyWorks">
-          <text class="stat-number">{{ creationData.worksCount || 14 }}</text>
-          <text class="stat-text">关注</text>
-        </view>
-        <view class="stat-item" @click="handleToFans">
-          <text class="stat-number">{{ creationData.fansCount || 8 }}</text>
-          <text class="stat-text">粉丝</text>
-        </view>
-        <view class="stat-item" @click="handleToLikes">
-          <text class="stat-number">{{ creationData.likesCount || 36 }}</text>
-          <text class="stat-text">获赞与收藏</text>
-        </view>
-      </view>
-      
-      <!-- 编辑资料 + 设置按钮 -->
-      <view class="action-buttons">
-        <view class="edit-profile-btn" @click="handleToEditInfo">
-          <text>编辑资料</text>
-        </view>
-        <view class="settings-btn" @click="handleToSetting">
-          <u-icon name="setting" color="#fff" size="20"></u-icon>
-        </view>
-      </view>
-      
-      <!-- 快捷卡片组 -->
-      <view class="quick-cards">
-        <view class="quick-card" @click="handleToAuth">
-          <u-icon name="checkmark-circle-fill" color="#fff" size="20"></u-icon>
-          <text class="card-text">官方认证</text>
-          <text class="card-desc">认证尊享权益</text>
-        </view>
-        <view class="quick-card" @click="handleCheckin" :class="{'signed-card': isSigned}">
-          <u-icon name="calendar-fill" :color="isSigned ? '#D4B07B' : '#fff'" size="20"></u-icon>
-          <text class="card-text">{{ isSigned ? '已签到' : '每日签到' }}</text>
-          <text class="card-desc">{{ isSigned ? '今日已签' : '签到领积分' }}</text>
-        </view>
-        <view class="quick-card" @click="handleToCollections">
-          <u-icon name="star-fill" color="#fff" size="20"></u-icon>
-          <text class="card-text">我的收藏</text>
-          <text class="card-desc">查看收藏</text>
-        </view>
-      </view>
-    </view>
-
-    <!-- 小红书风格主体内容 -->
-    <view class="xhs-main-content">
-      
-      <!-- 标签栏导航 -->
-      <view class="tab-navigation">
-        <scroll-view class="tab-scroll" scroll-x show-scrollbar="false">
-          <view class="tab-item active" @click="handleTabChange(0)">
-            <text class="tab-text">笔记</text>
-            <view class="tab-underline"></view>
+      <!-- Tab标签（吸顶） -->
+      <view class="tabs-wrapper" :class="{'fixed': isTabFixed}" :style="isTabFixed ? {paddingTop: tabFixedPaddingTop} : {}">
+        <view class="tabs">
+          <view 
+            class="tab-item" 
+            v-for="(tab, index) in tabs" 
+            :key="index"
+            :class="{'active': currentTab === index}"
+            @click="currentTab = index"
+          >
+            <text>{{ tab }}</text>
+            <view class="line" v-if="currentTab === index"></view>
           </view>
-          <view class="tab-item" @click="handleTabChange(1)">
-            <u-icon name="lock" size="12" color="#999"></u-icon>
-            <text class="tab-text">评论</text>
-          </view>
-          <view class="tab-item" @click="handleToCollections">
-            <text class="tab-text">收藏</text>
-          </view>
-          <view class="tab-item" @click="handleToLikes">
-            <u-icon name="lock" size="12" color="#999"></u-icon>
-            <text class="tab-text">赞过</text>
-          </view>
-        </scroll-view>
-        <view class="tab-search" @click="handleSearch">
+        </view>
+        <view class="search-icon" @click="handleSearch">
           <u-icon name="search" size="20" color="#999"></u-icon>
         </view>
       </view>
       
-      <!-- 卡片列表区域 (双列瀑布流) -->
-      <view class="waterfall-container">
-        <!-- 左列 -->
-        <view class="waterfall-column">
-          <!-- 示例卡片 1 -->
-          <view class="note-card" @click="handleNoteClick(1)">
-            <image class="note-cover" src="/static/images/profile.jpg" mode="aspectFill"></image>
-            <view class="note-info">
-              <text class="note-title">我的余额: ¥{{ balanceValue }}</text>
-              <view class="note-meta">
-                <view class="note-avatar">
-                  <image class="avatar-mini" :src="userInfo?.avatar || '/static/images/profile.jpg'" mode="aspectFill"></image>
-                </view>
-                <text class="note-author">·</text>
-                <view class="note-likes">
-                  <u-icon name="heart" size="12" color="#999"></u-icon>
-                  <text class="like-count">余额</text>
-                </view>
+      <!-- 内容区域 -->
+      <view class="content-area">
+        <view class="waterfall" v-for="item in 10">
+          <view class="column">
+            <view class="card" @click="handleToBalance">
+              <image class="cover" src="/static/images/profile.jpg" mode="aspectFill"></image>
+              <view class="info">
+                <text class="title">我的余额: ¥{{ balanceValue }}</text>
               </view>
             </view>
           </view>
-          
-          <!-- 示例卡片 3 - 等级 -->
-          <view class="note-card" @click="handleToLevel">
-            <view class="note-badge">
-              <text>等级</text>
-            </view>
-            <image class="note-cover" src="/static/images/profile.jpg" mode="aspectFill"></image>
-            <view class="note-info">
-              <text class="note-title">{{ memberInfo?.levelName || 'Lv.0' }}</text>
-              <view class="note-meta">
-                <view class="note-avatar">
-                  <image class="avatar-mini" :src="userInfo?.avatar || '/static/images/profile.jpg'" mode="aspectFill"></image>
-                </view>
-                <text class="note-author">·</text>
-                <view class="note-likes">
-                  <u-icon name="heart" size="12" color="#999"></u-icon>
-                  <text class="like-count">{{ progressPercent.toFixed(0) }}%</text>
-                </view>
+          <view class="column">
+            <view class="card" @click="handleToPoints">
+              <image class="cover" src="/static/images/profile.jpg" mode="aspectFill"></image>
+              <view class="info">
+                <text class="title">我的积分: {{ memberInfo.points || 0 }}</text>
               </view>
             </view>
           </view>
         </view>
         
-        <!-- 右列 -->
-        <view class="waterfall-column">
-          <!-- 示例卡片 2 - 积分 -->
-          <view class="note-card" @click="handleToPoints">
-            <image class="note-cover" src="/static/images/profile.jpg" mode="aspectFill"></image>
-            <view class="note-info">
-              <text class="note-title">我的积分</text>
-              <view class="note-meta">
-                <view class="note-avatar">
-                  <image class="avatar-mini" :src="userInfo?.avatar || '/static/images/profile.jpg'" mode="aspectFill"></image>
-                </view>
-                <text class="note-author">·</text>
-                <view class="note-likes">
-                  <u-icon name="heart-fill" size="12" color="#ff2442"></u-icon>
-                  <text class="like-count">{{ memberInfo.points || 0 }}</text>
-                </view>
-              </view>
-            </view>
-          </view>
-          
-          <!-- 示例卡片 4 - 订单 -->
-          <view class="note-card" @click="handleToOrder">
-            <image class="note-cover" src="/static/images/profile.jpg" mode="aspectFill"></image>
-            <view class="note-info">
-              <text class="note-title">我的订单</text>
-              <view class="note-meta">
-                <view class="note-avatar">
-                  <image class="avatar-mini" :src="userInfo?.avatar || '/static/images/profile.jpg'" mode="aspectFill"></image>
-                </view>
-                <text class="note-author">·</text>
-                <view class="note-likes">
-                  <u-icon name="eye" size="12" color="#999"></u-icon>
-                  <text class="like-count">{{ orderCount || 0 }}</text>
-                </view>
-              </view>
-            </view>
-          </view>
+        <view class="footer-tip">
+          <text>没有更多了</text>
         </view>
       </view>
-
-      <!-- 简化底部 -->
-      <view class="xhs-footer">
-        <text class="footer-text">没有更多了</text>
+    </scroll-view>
+    
+    <!-- 抽屉菜单 -->
+    <view class="drawer-mask" v-if="showDrawer" @click="showDrawer = false"></view>
+    <view class="drawer" :class="{'show': showDrawer}">
+      <scroll-view class="drawer-scroll" scroll-y>
+        <CustomCellGroup>
+          <CustomCell title="添加好友" icon="account-fill" :isLink="true" @click="handleDrawerItem('friend')" />
+          <CustomCell title="创作者中心" icon="edit-pen-fill" :isLink="true" @click="handleDrawerItem('creator')" />
+        </CustomCellGroup>
+        
+        <CustomCellGroup>
+          <CustomCell title="我的草稿" icon="file-text-fill" :isLink="true" @click="handleDrawerItem('draft')" />
+          <CustomCell title="浏览记录" icon="clock-fill" :isLink="true" @click="handleDrawerItem('history')" />
+          <CustomCell title="我的下载" icon="download" :isLink="true" @click="handleDrawerItem('download')" />
+        </CustomCellGroup>
+        
+        <CustomCellGroup>
+          <CustomCell title="订单" icon="order" :isLink="true" @click="handleDrawerItem('order')" />
+          <CustomCell title="购物车" icon="shopping-cart-fill" :isLink="true" @click="handleDrawerItem('cart')" />
+          <CustomCell title="钱包" icon="wallet-fill" :isLink="true" @click="handleDrawerItem('wallet')" />
+        </CustomCellGroup>
+        
+        <CustomCellGroup>
+          <CustomCell title="小程序" icon="grid-fill" :isLink="true" @click="handleDrawerItem('miniapp')" />
+          <CustomCell title="社区公约" icon="chat-fill" :isLink="true" @click="handleDrawerItem('community')" />
+        </CustomCellGroup>
+      </scroll-view>
+      
+      <view class="drawer-footer">
+        <view class="footer-btn" @click="handleHelp">
+          <u-icon name="question-circle" color="#666" size="20"></u-icon>
+          <text>帮助</text>
+        </view>
+        <view class="footer-btn" @click="handleToSetting">
+          <u-icon name="setting" color="#666" size="20"></u-icon>
+          <text>设置</text>
+        </view>
       </view>
-
     </view>
     
-    <!-- 右侧抽屉菜单 -->
-    <view class="drawer-mask" v-if="showDrawer" @click="showDrawer = false"></view>
-    <view class="drawer-container" :class="{'show': showDrawer}">
-      <view class="drawer-header">
-        <text class="drawer-title">菜单</text>
-        <u-icon name="close" color="#333" size="24" @click="showDrawer = false"></u-icon>
-      </view>
-      <view class="drawer-content">
-        <view class="drawer-item" @click="handleDrawerWallet">
-          <u-icon name="wallet" color="#FF6B6B" size="22"></u-icon>
-          <text class="drawer-item-text">我的钱包</text>
-          <u-icon name="arrow-right" color="#999" size="16"></u-icon>
-        </view>
-        <view class="drawer-item" @click="handleDrawerOrder">
-          <u-icon name="order" color="#4ECDC4" size="22"></u-icon>
-          <text class="drawer-item-text">我的订单</text>
-          <u-icon name="arrow-right" color="#999" size="16"></u-icon>
-        </view>
-      </view>
-    </view>
+    <!-- 底部安全区域 -->
+    <!-- #ifndef H5 -->
+    <view :style="{height: safeAreaBottom + 'px', background: '#fff'}"></view>
+    <!-- #endif -->
   </view>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import store from '@/store'
-import config from '@/config'
-import { getMemberInfo, checkin, getCheckinStatus } from '@/api/mobile/member'
-import SafeArea from '@/components/SafeArea/SafeArea.vue'
+import { getMemberInfo, getCheckinStatus } from '@/api/mobile/member'
+import CustomCell from '@/components/CustomCell/CustomCell.vue'
+import CustomCellGroup from '@/components/CustomCellGroup/CustomCellGroup.vue'
 
-const name = store.state.user.name
-const avatar = ref(store.state.user.avatar)
-const version = ref(config.appInfo.version)
-const userInfo = ref(store.state.info)
+// 状态
+const userInfo = computed(() => store.getters.info || {})
 const memberInfo = ref({})
 const isSigned = ref(false)
 const showDrawer = ref(false)
-
-// 新增:用户背景图
 const userBgImage = ref('')
-// 新增:用户个性签名
 const userSignature = ref('')
-// 新增:创作数据
-const creationData = ref({
-  worksCount: 0,   // 作品数
-  likesCount: 0,   // 获赞数
-  fansCount: 0     // 粉丝数
-})
-// 新增:订单数量
+const creationData = ref({ worksCount: 0, likesCount: 0, fansCount: 0 })
 const orderCount = ref(0)
 
-uni.$on('refresh', () => {
-  avatar.value = store.state.user.avatar
-  loadData()
+// 滚动相关
+const scrollTop = ref(0)
+const isScrolled = ref(false)
+const isTabFixed = ref(false)
+const statusBarHeight = ref(0)
+const scrollHeight = ref(0)
+const safeAreaBottom = ref(0)
+const currentTab = ref(0)
+const tabs = ['笔记', '收藏', '赞过']
+const navbarHeight = ref(88) // 导航栏内容高度
+
+// 导航栏背景色 - 根据滚动位置动态变化
+const navbarBg = computed(() => {
+  if (scrollTop.value < 50) {
+    return 'transparent'
+  }
+  // 渐变显示背景色（与头部背景色一致）
+  const opacity = Math.min((scrollTop.value - 50) / 150, 1)
+  // return `rgba(44, 95, 93, ${opacity})` // #2C5F5D
+  return `#fff`
 })
 
-// 计算余额显示值（分转元）
+// Tab吸顶时的padding-top
+const tabFixedPaddingTop = computed(() => {
+  return `${statusBarHeight.value + navbarHeight.value + 20}rpx`
+})
+
+// Tab的transform动画
+const tabTransform = computed(() => {
+  if (!isTabFixed.value) return 'translateY(0)'
+  // 平滑过渡动画
+  return 'translateY(0)'
+})
+
+// 余额
 const balanceValue = computed(() => {
   const balance = memberInfo.value.balance || 0
   return (balance / 100).toFixed(2)
 })
 
-// 计算等级进度百分比
-const progressPercent = computed(() => {
-  const growth = memberInfo.value.growth || 0
-  const nextLevelGrowth = memberInfo.value.nextLevelGrowth || 100
-  return Math.min((growth / nextLevelGrowth) * 100, 100)
+onMounted(() => {
+  // 获取系统信息
+  const systemInfo = uni.getSystemInfoSync()
+  statusBarHeight.value = systemInfo.statusBarHeight || 0
+  scrollHeight.value = systemInfo.windowHeight
+  safeAreaBottom.value = systemInfo.safeAreaInsets?.bottom || 0
 })
 
 onShow(() => {
   if (store.state.user.token) {
     loadData()
-  } else {
-    userInfo.value = {}
-    memberInfo.value = {}
-    isSigned.value = false
   }
 })
 
@@ -319,13 +259,11 @@ const loadData = async () => {
     const res = await getMemberInfo()
     if (res.data) {
       memberInfo.value = res.data
-      // 从会员信息中获取创作数据(假设接口返回这些字段,如无则显示0)
       creationData.value = {
         worksCount: res.data.worksCount || 0,
         likesCount: res.data.likesCount || 0,
         fansCount: res.data.fansCount || 0
       }
-      // 获取用户签名和背景图
       userSignature.value = res.data.signature || ''
       userBgImage.value = res.data.bgImage || ''
     }
@@ -333,11 +271,23 @@ const loadData = async () => {
     const signRes = await getCheckinStatus()
     isSigned.value = signRes.data
   } catch (e) {
-    console.error('加载会员信息失败', e)
+    console.error('加载失败', e)
   }
 }
 
-function handleToInfo() {
+// 滚动监听
+const onScroll = (e) => {
+  scrollTop.value = e.detail.scrollTop
+  isScrolled.value = scrollTop.value > 50
+  
+  // Tab吸顶判断 - 当滚动到头部区域底部时
+  // 头部高度约为 600rpx，需要转换为px
+  const headerHeight = 600 * (uni.getSystemInfoSync().windowWidth / 750)
+  isTabFixed.value = scrollTop.value > headerHeight - 100
+}
+
+// 页面跳转
+const handleToInfo = () => {
   if (!store.state.user.token) {
     uni.navigateTo({ url: '/pages/login' })
     return
@@ -345,459 +295,277 @@ function handleToInfo() {
   uni.navigateTo({ url: '/pages_mine/pages/info/index' })
 }
 
-function handleToEditInfo() {
+const handleToEditInfo = () => {
   uni.navigateTo({ url: '/pages_mine/pages/info/edit' })
 }
 
-function handleToSetting() {
+const handleToSetting = () => {
+  showDrawer.value = false
   uni.navigateTo({ url: '/pages_mine/pages/setting/index' })
 }
 
-function handleToBalance() {
+const handleToBalance = () => {
   uni.navigateTo({ url: '/pages/member-balance' })
 }
 
-function handleToPoints() {
+const handleToPoints = () => {
   uni.navigateTo({ url: '/pages/member-balance?tab=1' })
 }
 
-function handleToGrowth() {
-  uni.navigateTo({ url: '/pages/member-growth' })
+const handleToMyWorks = () => {
+  uni.showToast({ title: '功能开发中', icon: 'none' })
 }
 
-function handleToCoupons() {
-  uni.showToast({ title: '优惠券功能开发中', icon: 'none' })
+const handleToFans = () => {
+  uni.showToast({ title: '功能开发中', icon: 'none' })
 }
 
-function handleToLevel() {
-  uni.navigateTo({ url: '/pages/member-level' })
+const handleToLikes = () => {
+  uni.showToast({ title: '功能开发中', icon: 'none' })
 }
 
 const handleCheckin = () => {
   uni.navigateTo({ url: '/pages/member-checkin' })
 }
 
-const handleCopyId = () => {
-  uni.setClipboardData({
-    data: String(userInfo.value.userId),
-    success: () => {
-      uni.showToast({ title: '复制成功', icon: 'none' })
-    }
-  })
-}
-
-function handleToOrder() {
-  uni.showToast({ title: '功能开发中', icon: 'none' })
-}
-
-function handleToAddress() {
-  uni.showToast({ title: '功能开发中', icon: 'none' })
-}
-
-function handleToService() {
-  uni.showToast({ title: '功能开发中', icon: 'none' })
-}
-
-function handleHelp() {
-  uni.showToast({ title: '功能开发中', icon: 'none' })
-}
-
-function handleAbout() {
-  uni.showToast({ title: '功能开发中', icon: 'none' })
-}
-
-function handleToAuth() {
-  uni.navigateTo({ url: '/pages_mine/pages/auth/index' })
-}
-
-function handleToast(msg) {
-  uni.showToast({ title: msg, icon: 'none' })
-}
-
-// ======== 新增方法 ========
-
-// 上传作品
-function handleUploadWork() {
-  if (!store.state.user.token) {
-    uni.navigateTo({ url: '/pages/login' })
-    return
-  }
-  uni.showToast({ title: '上传功能开发中', icon: 'none' })
-  // TODO: 后续实现上传功能
-  // uni.navigateTo({ url: '/pages/upload' })
-}
-
-// 我的作品管理
-function handleToMyWorks() {
-  if (!store.state.user.token) {
-    uni.navigateTo({ url: '/pages/login' })
-    return
-  }
-  uni.showToast({ title: '作品管理功能开发中', icon: 'none' })
-  // TODO: uni.navigateTo({ url: '/pages/my-works' })
-}
-
-// 数据统计
-function handleToStatistics() {
-  if (!store.state.user.token) {
-    uni.navigateTo({ url: '/pages/login' })
-    return
-  }
-  uni.showToast({ title: '数据统计功能开发中', icon: 'none' })
-  // TODO: uni.navigateTo({ url: '/pages/statistics' })
-}
-
-// 创作收益
-function handleToEarnings() {
-  if (!store.state.user.token) {
-    uni.navigateTo({ url: '/pages/login' })
-    return
-  }
-  uni.showToast({ title: '创作收益功能开发中', icon: 'none' })
-  // TODO: uni.navigateTo({ url: '/pages/earnings' })
-}
-
-// 点击获赞数
-function handleToLikes() {
-  if (!store.state.user.token) {
-    uni.navigateTo({ url: '/pages/login' })
-    return
-  }
-  uni.showToast({ title: '获赞列表功能开发中', icon: 'none' })
-  // TODO: uni.navigateTo({ url: '/pages/my-likes' })
-}
-
-// 点击粉丝数
-function handleToFans() {
-  if (!store.state.user.token) {
-    uni.navigateTo({ url: '/pages/login' })
-    return
-  }
-  uni.showToast({ title: '粉丝列表功能开发中', icon: 'none' })
-  // TODO: uni.navigateTo({ url: '/pages/fans' })
-}
-
-// 我的收藏
-function handleToCollections() {
-  if (!store.state.user.token) {
-    uni.navigateTo({ url: '/pages/login' })
-    return
-  }
-  uni.showToast({ title: '收藏功能开发中', icon: 'none' })
-  // TODO: uni.navigateTo({ url: '/pages/collections' })
-}
-
-// 浏览历史
-function handleToHistory() {
-  if (!store.state.user.token) {
-    uni.navigateTo({ url: '/pages/login' })
-    return
-  }
-  uni.showToast({ title: '浏览历史功能开发中', icon: 'none' })
-  // TODO: uni.navigateTo({ url: '/pages/history' })
-}
-
-// 下载管理
-function handleToDownloads() {
-  if (!store.state.user.token) {
-    uni.navigateTo({ url: '/pages/login' })
-    return
-  }
-  uni.showToast({ title: '下载管理功能开发中', icon: 'none' })
-  // TODO: uni.navigateTo({ url: '/pages/downloads' })
-}
-
-// 分享赚钱
-function handleToShare() {
-  if (!store.state.user.token) {
-    uni.navigateTo({ url: '/pages/login' })
-    return
-  }
-  uni.showToast({ title: '分享功能开发中', icon: 'none' })
-  // TODO: uni.navigateTo({ url: '/pages/share' })
-}
-
-// ======== 小红书特有方法 ========
-
-// 菜单
-function handleMenu() {
-  uni.showToast({ title: '菜单功能开发中', icon: 'none' })
-}
-
-// 扫一扫
-function handleScan() {
+const handleScan = () => {
   uni.showToast({ title: '扫一扫功能开发中', icon: 'none' })
 }
 
-// 编辑签名
-function handleEditSignature() {
-  if (!store.state.user.token) {
-    uni.navigateTo({ url: '/pages/login' })
-    return
-  }
+const handleEditSignature = () => {
   uni.showToast({ title: '编辑签名功能开发中', icon: 'none' })
 }
 
-// 搜索
-function handleSearch() {
+const handleSearch = () => {
   uni.showToast({ title: '搜索功能开发中', icon: 'none' })
 }
 
-// Tab切换
-function handleTabChange(index) {
-  uni.showToast({ title: `切换到Tab ${index}`, icon: 'none' })
-}
-
-// 笔记点击
-function handleNoteClick(id) {
-  uni.showToast({ title: `查看笔记 ${id}`, icon: 'none' })
-}
-
-// 抽屉 - 我的钱包
-function handleDrawerWallet() {
+const handleHelp = () => {
   showDrawer.value = false
-  if (!store.state.user.token) {
-    uni.navigateTo({ url: '/pages/login' })
-    return
-  }
-  uni.navigateTo({ url: '/pages/wallet' })
+  uni.showToast({ title: '帮助功能开发中', icon: 'none' })
 }
 
-// 抽屉 - 我的订单
-function handleDrawerOrder() {
+// 抽屉菜单项点击
+const handleDrawerItem = (type) => {
   showDrawer.value = false
-  if (!store.state.user.token) {
-    uni.navigateTo({ url: '/pages/login' })
-    return
+  
+  const actions = {
+    friend: () => uni.showToast({ title: '添加好友功能开发中', icon: 'none' }),
+    creator: () => uni.showToast({ title: '创作者中心功能开发中', icon: 'none' }),
+    draft: () => uni.showToast({ title: '草稿功能开发中', icon: 'none' }),
+    history: () => uni.showToast({ title: '浏览记录功能开发中', icon: 'none' }),
+    download: () => uni.showToast({ title: '下载功能开发中', icon: 'none' }),
+    order: () => uni.showToast({ title: '订单功能开发中', icon: 'none' }),
+    cart: () => uni.showToast({ title: '购物车功能开发中', icon: 'none' }),
+    wallet: () => handleToBalance(),
+    miniapp: () => uni.showToast({ title: '小程序功能开发中', icon: 'none' }),
+    community: () => uni.showToast({ title: '社区公约功能开发中', icon: 'none' })
   }
-  uni.navigateTo({ url: '/pages/order' })
+  
+  actions[type]?.()
 }
 </script>
 
 <style lang="scss" scoped>
-.mine-container {
-  min-height: 100vh;
-  background-color: #FFFFFF;
-  color: #333;
+.mine-page {
+  width: 100%;
+  height: 100vh;
+  background: #f5f5f5;
+  position: relative;
 }
 
-// ========== 小红书风格顶部 ==========
-.xhs-header {
-  position: relative;
-  width: 100%;
-  min-height: 700rpx;
-  background: linear-gradient(180deg, #2C5F5D 0%, #1F3A3D 100%);
-  padding-bottom: 30rpx;
+// 固定导航栏
+.fixed-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  transition: background 0.3s ease; // 添加背景色过渡动画
   
-  // 毛玻璃背景
-  .bg-blur {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 0;
-    opacity: 0.3;
-    filter: blur(60rpx);
-  }
-  
-  // 深色遮罩
-  .bg-dark-mask {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1;
-    background: rgba(0,0,0,0.2);
-  }
-  
-  // 右上角浮动签到按钮
-  .checkin-float-btn {
-    position: absolute;
-    top: 60rpx;
-    right: 30rpx;
-    z-index: 10;
-    background: rgba(255,255,255,0.25);
-    backdrop-filter: blur(10px);
-    border-radius: 40rpx;
-    padding: 12rpx 24rpx;
+  .navbar-content {
     display: flex;
     align-items: center;
-    gap: 8rpx;
-    transition: all 0.3s;
-    
-    text {
-      font-size: 24rpx;
-      color: #fff;
-      font-weight: 500;
-    }
-    
-    &.signed {
-      background: rgba(212, 176, 123, 0.3);
-      
-      text {
-        color: #D4B07B;
-      }
-    }
-  }
-  
-  // 顶部操作栏
-  .top-bar {
-    position: relative;
-    z-index: 10;
-    display: flex;
     justify-content: space-between;
-    align-items: center;
-    padding: 60rpx 30rpx 20rpx;
+    padding: 20rpx 30rpx;
+    height: 88rpx;
     
-    .top-btn {
+    .navbar-left,
+    .navbar-right {
       width: 60rpx;
       height: 60rpx;
       display: flex;
       align-items: center;
       justify-content: center;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.3); // 半透明黑色背景
+      backdrop-filter: blur(10px);
+      transition: all 0.2s;
+      
+      &:active {
+        transform: scale(0.95);
+        opacity: 0.8;
+      }
     }
     
-    .top-actions {
+    .navbar-avatar {
+      flex: 1;
       display: flex;
-      gap: 16rpx;
+      justify-content: center;
+      
+      .avatar-img {
+        width: 60rpx;
+        height: 60rpx;
+        border-radius: 50%;
+        border: 2rpx solid #fff;
+      }
     }
   }
+}
+
+// 滚动内容
+.scroll-content {
+  width: 100%;
+}
+
+// 头部区域
+.header-section {
+  position: relative;
+  min-height: 600rpx;
+  background: linear-gradient(180deg, #2C5F5D 0%, #1F3A3D 100%);
+  padding: 140rpx 30rpx 30rpx;
   
-  // 用户信息区
-  .user-info-section {
+  .bg-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.3;
+    filter: blur(60rpx);
+  }
+  
+  .bg-mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.2);
+  }
+  
+  .user-info {
     position: relative;
     z-index: 2;
-    padding: 0 30rpx;
     
     .avatar-row {
-      margin-bottom: 16rpx;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20rpx;
       
-      .avatar-wrapper {
+      .avatar-box {
         position: relative;
         width: 140rpx;
         height: 140rpx;
         
         .avatar {
-          width: 140rpx;
-          height: 140rpx;
+          width: 100%;
+          height: 100%;
           border-radius: 50%;
           border: 4rpx solid rgba(255,255,255,0.2);
         }
         
-        .edit-badge {
+        .edit-icon {
           position: absolute;
           bottom: 0;
           right: 0;
-          width: 40rpx;
-          height: 40rpx;
+          width: 36rpx;
+          height: 36rpx;
           background: #FFD600;
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          border: 2rpx solid #2C5F5D;
+        }
+      }
+      
+      .checkin-btn {
+        background: rgba(255,255,255,0.25);
+        backdrop-filter: blur(10px);
+        border-radius: 40rpx;
+        padding: 12rpx 24rpx;
+        display: flex;
+        align-items: center;
+        gap: 8rpx;
+        
+        text {
+          font-size: 24rpx;
+          color: #fff;
+        }
+        
+        &.signed {
+          background: rgba(212, 176, 123, 0.3);
+          
+          text {
+            color: #D4B07B;
+          }
         }
       }
     }
     
-    .name-id-row {
+    .nickname {
+      font-size: 48rpx;
+      font-weight: bold;
+      color: #fff;
       margin-bottom: 8rpx;
-      
-      .nickname-text {
-        font-size: 48rpx;
-        font-weight: bold;
-        color: #fff;
-      }
     }
     
-    .redbook-id-row {
-      display: flex;
-      align-items: center;
+    .user-id {
+      font-size: 24rpx;
+      color: rgba(255,255,255,0.7);
       margin-bottom: 16rpx;
-      
-      .id-label {
-        font-size: 24rpx;
-        color: rgba(255,255,255,0.7);
-      }
-      
-      .id-value {
-        font-size: 24rpx;
-        color: rgba(255,255,255,0.7);
-        margin: 0 12rpx;
-      }
-      
-      .level-tag {
-        padding: 4rpx 8rpx;
-        background: rgba(255,255,255,0.2);
-        border-radius: 8rpx;
-      }
     }
     
-    .bio-row {
-      margin-bottom: 12rpx;
-      
-      .bio-text {
-        font-size: 26rpx;
-        color: rgba(255,255,255,0.9);
-        line-height: 1.5;
-      }
-    }
-    
-    .gender-ip-row {
-      display: flex;
-      align-items: center;
-      
-      .gender-icon {
-        width: 32rpx;
-        height: 32rpx;
-        background: rgba(255,255,255,0.2);
-        border-radius: 4rpx;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
+    .bio {
+      font-size: 26rpx;
+      color: rgba(255,255,255,0.9);
+      margin-bottom: 20rpx;
     }
   }
   
-  // 数据统计行
-  .stats-row {
+  .stats {
     position: relative;
     z-index: 2;
     display: flex;
-    padding: 30rpx;
     gap: 40rpx;
+    margin-bottom: 30rpx;
     
     .stat-item {
       display: flex;
       align-items: baseline;
       gap: 8rpx;
       
-      .stat-number {
+      .num {
         font-size: 32rpx;
         font-weight: bold;
         color: #fff;
-        font-family: DIN, sans-serif;
       }
       
-      .stat-text {
+      .label {
         font-size: 26rpx;
         color: rgba(255,255,255,0.8);
       }
     }
   }
   
-  // 按钮组
-  .action-buttons {
+  .action-btns {
     position: relative;
     z-index: 2;
     display: flex;
-    padding: 0 30rpx;
-    margin-bottom: 20rpx;
     gap: 16rpx;
     
-    .edit-profile-btn {
+    .edit-btn {
       flex: 1;
       background: rgba(255,255,255,0.25);
       backdrop-filter: blur(10px);
@@ -810,11 +578,10 @@ function handleDrawerOrder() {
       text {
         font-size: 26rpx;
         color: #fff;
-        font-weight: 500;
       }
     }
     
-    .settings-btn {
+    .setting-btn {
       width: 64rpx;
       height: 64rpx;
       background: rgba(255,255,255,0.25);
@@ -825,90 +592,49 @@ function handleDrawerOrder() {
       justify-content: center;
     }
   }
-  
-  // 快捷卡片组
-  .quick-cards {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    padding: 0 30rpx;
-    gap: 16rpx;
-    
-    .quick-card {
-      flex: 1;
-      background: rgba(255,255,255,0.15);
-      backdrop-filter: blur(10px);
-      border-radius: 16rpx;
-      padding: 24rpx;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      transition: all 0.3s;
-      
-      .card-text {
-        font-size: 24rpx;
-        color: #fff;
-        margin: 12rpx 0 4rpx;
-        font-weight: 500;
-      }
-      
-      .card-desc {
-        font-size: 20rpx;
-        color: rgba(255,255,255,0.6);
-      }
-      
-      // 已签到状态
-      &.signed-card {
-        background: rgba(212, 176, 123, 0.25);
-        
-        .card-text {
-          color: #D4B07B;
-        }
-        
-        .card-desc {
-          color: rgba(212, 176, 123, 0.7);
-        }
-      }
-    }
-  }
 }
 
-// ========== 小红书主体内容 ==========
-.xhs-main-content {
-  position: relative;
+// Tab标签
+.tabs-wrapper {
   background: #fff;
-
-  // 标签栏导航
-  .tab-navigation {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20rpx 30rpx;
-    border-bottom: 1rpx solid #f0f0f0;
-    background: #fff;
-    position: sticky;
+  display: flex;
+  align-items: center;
+  padding: 20rpx 30rpx;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); // 添加平滑过渡动画
+  
+  &.fixed {
+    position: fixed;
     top: 0;
-    z-index: 100;
-
-    .tab-scroll {
-      flex: 1;
-      white-space: nowrap;
-
-      .tab-item {
-        display: inline-flex;
-        align-items: center;
-        gap: 6rpx;
-        margin-right: 48rpx;
-        padding-bottom: 16rpx;
-        position: relative;
-
-        .tab-text {
-          font-size: 28rpx;
-          color: #999;
-          font-weight: 500;
+    left: 0;
+    right: 0;
+    z-index: 998;
+    box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.06);
+    animation: slideDown 0.3s ease-out; // 添加下滑动画
+  }
+  
+  .tabs {
+    flex: 1;
+    display: flex;
+    gap: 48rpx;
+    
+    .tab-item {
+      position: relative;
+      padding-bottom: 16rpx;
+      transition: all 0.2s; // 添加Tab切换动画
+      
+      text {
+        font-size: 28rpx;
+        color: #999;
+        transition: color 0.2s, font-weight 0.2s;
+      }
+      
+      &.active {
+        text {
+          color: #333;
+          font-weight: bold;
         }
-
-        .tab-underline {
+        
+        .line {
           position: absolute;
           bottom: 0;
           left: 50%;
@@ -917,130 +643,160 @@ function handleDrawerOrder() {
           height: 6rpx;
           background: #333;
           border-radius: 3rpx;
-        }
-
-        &.active {
-          .tab-text {
-            color: #333;
-            font-weight: bold;
-          }
+          animation: lineExpand 0.3s ease-out; // 添加下划线展开动画
         }
       }
     }
-
-    .tab-search {
-      width: 56rpx;
-      height: 56rpx;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
   }
-
-  // 瀑布流容器
-  .waterfall-container {
+  
+  .search-icon {
+    width: 56rpx;
+    height: 56rpx;
     display: flex;
-    padding: 12rpx;
-    background: #fff;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+// Tab吸顶下滑动画
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+// Tab下划线展开动画
+@keyframes lineExpand {
+  from {
+    width: 0;
+  }
+  to {
+    width: 32rpx;
+  }
+}
+
+// 内容区域
+.content-area {
+  background: #fff;
+  min-height: 400rpx;
+  padding: 20rpx;
+  
+  .waterfall {
+    display: flex;
     gap: 12rpx;
-
-    .waterfall-column {
+    
+    .column {
       flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 12rpx;
-
-      .note-card {
+      
+      .card {
         background: #fff;
         border-radius: 16rpx;
         overflow: hidden;
-        position: relative;
-        box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
-
-        .note-badge {
-          position: absolute;
-          top: 16rpx;
-          left: 16rpx;
-          z-index: 5;
-          background: rgba(0, 0, 0, 0.5);
-          backdrop-filter: blur(10px);
-          padding: 6rpx 16rpx;
-          border-radius: 12rpx;
-
-          text {
-            font-size: 20rpx;
-            color: #fff;
-          }
-        }
-
-        .note-cover {
+        margin-bottom: 12rpx;
+        box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.06);
+        
+        .cover {
           width: 100%;
-          height: 400rpx;
-          display: block;
+          height: 300rpx;
         }
-
-        .note-info {
+        
+        .info {
           padding: 16rpx;
-
-          .note-title {
+          
+          .title {
             font-size: 26rpx;
             color: #333;
-            line-height: 1.4;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            margin-bottom: 12rpx;
-          }
-
-          .note-meta {
-            display: flex;
-            align-items: center;
-            gap: 8rpx;
-
-            .note-avatar {
-              width: 40rpx;
-              height: 40rpx;
-
-              .avatar-mini {
-                width: 100%;
-                height: 100%;
-                border-radius: 50%;
-              }
-            }
-
-            .note-author {
-              font-size: 20rpx;
-              color: #999;
-            }
-
-            .note-likes {
-              margin-left: auto;
-              display: flex;
-              align-items: center;
-              gap: 4rpx;
-
-              .like-count {
-                font-size: 20rpx;
-                color: #999;
-              }
-            }
           }
         }
       }
     }
   }
-
-  // 小红书底部
-  .xhs-footer {
-    padding: 80rpx 0;
+  
+  .footer-tip {
+    padding: 60rpx 0;
     text-align: center;
-    background: #fff;
     
-    .footer-text {
+    text {
       font-size: 24rpx;
       color: #ccc;
     }
   }
+}
+
+// 抽屉
+.drawer-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  left: -680rpx;
+  bottom: 0;
+  width: 680rpx;
+  background: #f7f7f7;
+  z-index: 1001;
+  transition: left 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  display: flex;
+  flex-direction: column;
+  
+  &.show {
+    left: 0;
+  }
+  
+  .drawer-scroll {
+    flex: 1;
+    padding: 60rpx 0 20rpx;
+    background: #f7f7f7;
+  }
+  
+  .drawer-footer {
+    display: flex;
+    padding: 20rpx 40rpx 40rpx;
+    gap: 24rpx;
+    background: #f7f7f7;
+    border-top: 1rpx solid #e5e5e5;
+    
+    .footer-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12rpx;
+      padding: 24rpx;
+      background: #fff;
+      border-radius: 16rpx;
+      transition: all 0.15s;
+      
+      &:active {
+        background: #f7f7f7;
+        transform: scale(0.98);
+      }
+      
+      text {
+        font-size: 26rpx;
+        color: #666;
+      }
+    }
+  }
+}
+
+// 动画
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
 }
 </style>
