@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>安全验证</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: rgba(0, 0, 0, 0.5);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #captcha-container {
+            width: 90%;
+            max-width: 400px;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .captcha-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .captcha-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        #tac-captcha-box {
+            min-height: 300px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div id="captcha-container">
+        <div class="captcha-header">
+            <div class="captcha-title">安全验证</div>
+        </div>
+        <div id="tac-captcha-box">
+            <div class="loading">加载中...</div>
+        </div>
+    </div>
+
+    <script src="./load.min.js"></script>
+    <script>
+        // 获取URL参数
+        function getQueryParam(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        // 获取配置参数
+        const apiBase = getQueryParam('apiBase') || '/dev-api';
+        const tenantId = getQueryParam('tenantId') || '000000';
+
+        // 初始化TAC
+        async function initCaptcha() {
+            try {
+                const config = {
+                    requestCaptchaDataUrl: apiBase + '/captcha/gen',
+                    validCaptchaUrl: apiBase + '/captcha/check',
+                    bindEl: '#tac-captcha-box',
+                    validSuccess: function(res, c, tac) {
+                        console.log('验证成功', res, c);
+                        
+                        // 获取验证码ID
+                        const captchaId = res?.data || c?.id || c?.currentCaptchaData?.id || '';
+                        
+                        // 通知 uni-app
+                        if (window.uni && window.uni.postMessage) {
+                            window.uni.postMessage({
+                                data: {
+                                    type: 'captcha_success',
+                                    captchaId: captchaId
+                                }
+                            });
+                        }
+                        
+                        // 延迟关闭
+                        setTimeout(() => {
+                            tac.destroyWindow();
+                            if (window.uni) {
+                                uni.navigateBack();
+                            }
+                        }, 500);
+                    },
+                    validFail: function(res, c, tac) {
+                        console.log('验证失败', res);
+                        tac.reloadCaptcha();
+                    },
+                    btnRefreshFun: function(el, tac) {
+                        tac.reloadCaptcha();
+                    },
+                    btnCloseFun: function(el, tac) {
+                        tac.destroyWindow();
+                        
+                        // 通知 uni-app 关闭
+                        if (window.uni && window.uni.postMessage) {
+                            window.uni.postMessage({
+                                data: {
+                                    type: 'captcha_close'
+                                }
+                            });
+                        }
+                        
+                        if (window.uni) {
+                            uni.navigateBack();
+                        }
+                    }
+                };
+
+                const style = {
+                    logoUrl: null
+                };
+
+                const tac = await window.initTAC('/tac', config, style);
+                tac.init();
+            } catch (error) {
+                console.error('初始化TAC失败', error);
+                document.getElementById('tac-captcha-box').innerHTML = 
+                    '<div class="loading" style="color: red;">加载失败，请刷新重试</div>';
+            }
+        }
+
+        // 页面加载完成后初始化
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initCaptcha);
+        } else {
+            initCaptcha();
+        }
+    </script>
+</body>
+</html>

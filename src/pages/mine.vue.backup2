@@ -1,27 +1,14 @@
 <template>
   <view class="mine-container">
-    <!-- 自定义顶部导航栏 (参考小红书) -->
-    <view class="custom-navbar">
-      <view class="navbar-left" @click="showDrawer = true">
-        <u-icon name="list" color="#fff" size="24"></u-icon>
-      </view>
-      <view class="navbar-center">
-        <text class="navbar-title">我的</text>
-      </view>
-      <view class="navbar-right">
-        <u-icon name="scan" color="#fff" size="24" @click="handleScan"></u-icon>
-      </view>
-    </view>
-    
     <!-- 沉浸式顶部区域 (借鉴小红书毛玻璃背景) -->
-    <view class="xhs-header">
+    <view class="header-immersive">
       <!-- 背景图层 -->
       <image 
-        class="bg-blur" 
+        class="bg-image" 
         :src="userBgImage || '/static/images/profile.jpg'" 
         mode="aspectFill"
       ></image>
-      <view class="bg-dark-mask"></view>
+      <view class="bg-gradient"></view>
       
       <!-- 右上角签到按钮 (保留) -->
       <view class="checkin-float-btn" @click="handleCheckin" :class="{'signed': isSigned}">
@@ -96,19 +83,19 @@
       <!-- 快捷卡片组 -->
       <view class="quick-cards">
         <view class="quick-card" @click="handleToAuth">
-          <u-icon name="checkmark-circle-fill" color="#fff" size="20"></u-icon>
-          <text class="card-text">官方认证</text>
-          <text class="card-desc">认证尊享权益</text>
+          <u-icon name="bulb" color="#fff" size="20"></u-icon>
+          <text class="card-text">创作灵感</text>
+          <text class="card-desc">寻创作找灵感</text>
         </view>
-        <view class="quick-card" @click="handleCheckin" :class="{'signed-card': isSigned}">
-          <u-icon name="calendar-fill" :color="isSigned ? '#D4B07B' : '#fff'" size="20"></u-icon>
-          <text class="card-text">{{ isSigned ? '已签到' : '每日签到' }}</text>
-          <text class="card-desc">{{ isSigned ? '今日已签' : '签到领积分' }}</text>
+        <view class="quick-card" @click="handleCheckin">
+          <u-icon name="clock" color="#fff" size="20"></u-icon>
+          <text class="card-text">浏览记录</text>
+          <text class="card-desc">看过的笔记</text>
         </view>
         <view class="quick-card" @click="handleToCollections">
-          <u-icon name="star-fill" color="#fff" size="20"></u-icon>
-          <text class="card-text">我的收藏</text>
-          <text class="card-desc">查看收藏</text>
+          <u-icon name="account" color="#fff" size="20"></u-icon>
+          <text class="card-text">群聊</text>
+          <text class="card-desc">查看详情</text>
         </view>
       </view>
     </view>
@@ -230,27 +217,6 @@
       </view>
 
     </view>
-    
-    <!-- 右侧抽屉菜单 -->
-    <view class="drawer-mask" v-if="showDrawer" @click="showDrawer = false"></view>
-    <view class="drawer-container" :class="{'show': showDrawer}">
-      <view class="drawer-header">
-        <text class="drawer-title">菜单</text>
-        <u-icon name="close" color="#333" size="24" @click="showDrawer = false"></u-icon>
-      </view>
-      <view class="drawer-content">
-        <view class="drawer-item" @click="handleDrawerWallet">
-          <u-icon name="wallet" color="#FF6B6B" size="22"></u-icon>
-          <text class="drawer-item-text">我的钱包</text>
-          <u-icon name="arrow-right" color="#999" size="16"></u-icon>
-        </view>
-        <view class="drawer-item" @click="handleDrawerOrder">
-          <u-icon name="order" color="#4ECDC4" size="22"></u-icon>
-          <text class="drawer-item-text">我的订单</text>
-          <u-icon name="arrow-right" color="#999" size="16"></u-icon>
-        </view>
-      </view>
-    </view>
   </view>
 </template>
 
@@ -267,7 +233,6 @@ const version = ref(config.appInfo.version)
 const userInfo = ref(store.state.info)
 const memberInfo = ref({})
 const isSigned = ref(false)
-const showDrawer = ref(false)
 
 // 新增:用户背景图
 const userBgImage = ref('')
@@ -548,26 +513,6 @@ function handleTabChange(index) {
 function handleNoteClick(id) {
   uni.showToast({ title: `查看笔记 ${id}`, icon: 'none' })
 }
-
-// 抽屉 - 我的钱包
-function handleDrawerWallet() {
-  showDrawer.value = false
-  if (!store.state.user.token) {
-    uni.navigateTo({ url: '/pages/login' })
-    return
-  }
-  uni.navigateTo({ url: '/pages/wallet' })
-}
-
-// 抽屉 - 我的订单
-function handleDrawerOrder() {
-  showDrawer.value = false
-  if (!store.state.user.token) {
-    uni.navigateTo({ url: '/pages/login' })
-    return
-  }
-  uni.navigateTo({ url: '/pages/order' })
-}
 </script>
 
 <style lang="scss" scoped>
@@ -606,36 +551,6 @@ function handleDrawerOrder() {
     height: 100%;
     z-index: 1;
     background: rgba(0,0,0,0.2);
-  }
-  
-  // 右上角浮动签到按钮
-  .checkin-float-btn {
-    position: absolute;
-    top: 60rpx;
-    right: 30rpx;
-    z-index: 10;
-    background: rgba(255,255,255,0.25);
-    backdrop-filter: blur(10px);
-    border-radius: 40rpx;
-    padding: 12rpx 24rpx;
-    display: flex;
-    align-items: center;
-    gap: 8rpx;
-    transition: all 0.3s;
-    
-    text {
-      font-size: 24rpx;
-      color: #fff;
-      font-weight: 500;
-    }
-    
-    &.signed {
-      background: rgba(212, 176, 123, 0.3);
-      
-      text {
-        color: #D4B07B;
-      }
-    }
   }
   
   // 顶部操作栏
@@ -839,7 +754,6 @@ function handleDrawerOrder() {
       display: flex;
       flex-direction: column;
       align-items: center;
-      transition: all 0.3s;
       
       .card-text {
         font-size: 24rpx;
@@ -851,19 +765,6 @@ function handleDrawerOrder() {
       .card-desc {
         font-size: 20rpx;
         color: rgba(255,255,255,0.6);
-      }
-      
-      // 已签到状态
-      &.signed-card {
-        background: rgba(212, 176, 123, 0.25);
-        
-        .card-text {
-          color: #D4B07B;
-        }
-        
-        .card-desc {
-          color: rgba(212, 176, 123, 0.7);
-        }
       }
     }
   }

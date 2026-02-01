@@ -65,16 +65,82 @@ export function logout() {
   })
 }
 
-// 获取验证码
-export function getCodeImg() {
+// 获取网站配置信息
+export function getWebsiteConfig(tenantId) {
+  return request({
+    url: '/',
+    headers: {
+      'X-Tenant-Id': tenantId || '000000'
+    },
+    params: tenantId ? { tenantId } : undefined,
+    method: 'get'
+  });
+}
+
+/**
+ * 获取验证码
+ * @param tenantId 租户ID
+ */
+export function getCodeImg(tenantId){
   return request({
     url: '/auth/code',
     headers: {
-      isToken: false
+      isToken: false,
+      'X-Tenant-Id': tenantId || '000000'
     },
-    method: 'GET',
+    params: tenantId ? { tenantId } : undefined,
+    method: 'get',
     timeout: 20000
-  })
+  });
+}
+
+/**
+ * 获取邮箱验证码
+ * @param email 邮箱地址
+ * @param tenantId 租户ID
+ * @param captchaId 行为验证码ID
+ */
+export function sendEmailVerifyCode(email, tenantId, captchaId){
+  return request({
+    url: '/resource/email/code',
+    headers: {
+      isToken: false,
+      'X-Tenant-Id': tenantId || '000000'
+    },
+    method: 'get',
+    params: {
+      email,
+      businessType: 'login',
+      captchaId,
+      ...(tenantId ? { tenantId } : {})
+    },
+    timeout: 20000
+  });
+}
+
+/**
+ * 获取号码认证验证码
+ * @param phonenumber 手机号
+ * @param businessType 业务类型
+ * @param tenantId 租户ID
+ * @param captchaId 行为验证码ID
+ */
+export function sendPhoneVerifyCode(phonenumber, businessType, tenantId , captchaId ) {
+  return request({
+    url: '/resource/phoneverify/code',
+    headers: {
+      isToken: false,
+      'X-Tenant-Id': tenantId || '000000'
+    },
+    method: 'get',
+    params: {
+      phonenumber,
+      businessType: businessType || 'login',
+      captchaId,
+      ...(tenantId ? { tenantId } : {})
+    },
+    timeout: 20000
+  });
 }
 
 // 获取租户列表
@@ -85,5 +151,37 @@ export function getTenantList(){
       isToken: false
     },
     method: 'GET'
+  });
+}
+
+/**
+ * 获取验证码配置
+ * @param tenantId 租户ID
+ */
+export function getCaptchaConfig(tenantId){
+  return request({
+    url: '/captchaConfig',
+    headers: {
+      isToken: false,
+      'X-Tenant-Id': tenantId || '000000'
+    },
+    params: tenantId ? { tenantId } : undefined,
+    method: 'get'
+  });
+}
+
+/**
+ * 获取注册开关配置
+ * @param tenantId 租户ID
+ */
+export function getRegisterConfig(tenantId) {
+  return request({
+    url: '/registerConfig',
+    headers: {
+      isToken: false,
+      'X-Tenant-Id': tenantId || '000000'
+    },
+    params: tenantId ? { tenantId } : undefined,
+    method: 'get'
   });
 }

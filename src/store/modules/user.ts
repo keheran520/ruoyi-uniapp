@@ -10,6 +10,7 @@ const baseUrl = config.baseUrl
 
 const user: Module<UserState, UserState> = {
   state: {
+    info: storage.get(constant.info),
     token: getToken(),
     name: storage.get(constant.name),
     avatar: storage.get(constant.avatar),
@@ -17,6 +18,9 @@ const user: Module<UserState, UserState> = {
     permissions: storage.get(constant.permissions)
   },
   mutations: {
+    SET_INFO: (state, info: string) => {
+      state.info = info
+    },
     SET_TOKEN: (state, token: string) => {
       state.token = token
     },
@@ -71,6 +75,7 @@ const user: Module<UserState, UserState> = {
           } else {
             commit('SET_ROLES', ['ROLE_DEFAULT'])
           }
+          commit('SET_INFO', user)
           commit('SET_NAME', username)
           commit('SET_AVATAR', avatar)
           resolve(res)
@@ -84,6 +89,7 @@ const user: Module<UserState, UserState> = {
     LogOut({ commit, state }) {
       return new Promise((resolve, reject) => {
         logout().then((res) => {
+          commit('SET_INFO', '')
           commit('SET_TOKEN', '')
           commit('SET_ROLES', [])
           commit('SET_PERMISSIONS', [])

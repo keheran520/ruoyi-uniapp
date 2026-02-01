@@ -1,52 +1,220 @@
 <template>
-  <view class="normal-login-container">
-    <view class="logo-content align-center justify-center flex">
-      <image style="width: 100rpx;height: 100rpx;" :src="globalConfig.appInfo.logo" mode="widthFix">
-      </image>
-      <text class="title">移动端登录</text>
+  <view class="login-container">
+    <!-- 顶部头部 (仿B端移动端设计) -->
+    <view class="mobile-header">
+      <image class="mobile-logo" :src="globalConfig.appInfo.logo" mode="aspectFit"></image>
+      <text class="mobile-title">{{ globalConfig.appInfo.title }}</text>
     </view>
-    <view class="login-form-content">
-      <view class="input-item flex align-center" v-if="tenantEnabled">
-        <view class="iconfont icon-friendfill icon"></view>
-        <uni-data-select v-model="loginForm.tenantId" :localdata="range" :border="false">
-          <!-- <option v-for="item in tenantList" :key="item.tenantId" :label="item.companyName" :value="item.tenantId"></option> -->
-        </uni-data-select>
-        <!-- <input v-model="loginForm.username" class="input" type="text" placeholder="请输入账号" maxlength="30" /> -->
+
+    <!-- 内容区域 -->
+    <view class="content-box">
+      <!-- 欢迎标语 -->
+      <view class="form-header">
+        <text class="form-title">欢迎回来</text>
+        <text class="form-subtitle">请登录您的账户</text>
       </view>
-      <view class="input-item flex align-center">
-        <view class="iconfont icon-user icon"></view>
-        <input v-model="loginForm.username" class="input" type="text" placeholder="请输入账号" maxlength="30"/>
-      </view>
-      <view class="input-item flex align-center">
-        <view class="iconfont icon-password icon"></view>
-        <input v-model="loginForm.password" type="password" class="input" placeholder="请输入密码" maxlength="20"/>
-      </view>
-      <view class="input-item flex align-center" style="width: 60%;margin: 0px;" v-if="captchaEnabled">
-        <view class="iconfont icon-code icon"></view>
-        <input v-model="loginForm.code" type="number" class="input" placeholder="请输入验证码" maxlength="4"/>
-        <view class="login-code">
-          <image :src="codeUrl" @click="getCode" class="login-code-img"></image>
+
+      <!-- 登录方式切换 -->
+      <view class="login-type-switch">
+        <view 
+          class="switch-item" 
+          :class="{ active: loginType === 'password' }"
+          @click="switchLoginType('password')"
+        >
+          <text>密码登录</text>
+        </view>
+        <view 
+          class="switch-item" 
+          :class="{ active: loginType === 'email' }"
+          @click="switchLoginType('email')"
+        >
+          <text>邮箱登录</text>
+        </view>
+        <view 
+          class="switch-item" 
+          :class="{ active: loginType === 'phoneverify' }"
+          @click="switchLoginType('phoneverify')"
+        >
+          <text>号码登录</text>
         </view>
       </view>
-      <view class="action-btn">
-        <button @click="handleLogin" class="login-btn cu-btn block bg-blue lg round">登录</button>
+
+      <!-- 表单区域 -->
+      <view class="form-section animate-fade-in">
+        <!-- 租户选择 -->
+        <view class="input-item" v-if="tenantEnabled">
+          <u-icon name="grid-fill" size="22" color="#909399"></u-icon>
+          <view class="select-box">
+            <uni-data-select
+              v-model="loginForm.tenantId"
+              :localdata="range"
+              :clear="false"
+              placeholder="请选择租户"
+            ></uni-data-select>
+          </view>
+        </view>
+
+        <!-- 密码登录表单 -->
+        <template v-if="loginType === 'password'">
+          <!-- 账号 -->
+          <view class="input-item">
+            <u-icon name="account" size="22" color="#909399"></u-icon>
+            <input 
+              class="input" 
+              type="text" 
+              v-model="loginForm.username" 
+              placeholder="请输入账号" 
+              maxlength="30"
+            />
+          </view>
+
+          <!-- 密码 -->
+          <view class="input-item">
+            <u-icon name="lock" size="22" color="#909399"></u-icon>
+            <input 
+              class="input" 
+              :type="showPassword ? 'text' : 'password'"
+              v-model="loginForm.password" 
+              placeholder="请输入密码" 
+              maxlength="20"
+            />
+            <view class="eye-icon" @click="showPassword = !showPassword">
+              <u-icon :name="showPassword ? 'eye-fill' : 'eye-off'" size="22" color="#909399"></u-icon>
+            </view>
+          </view>
+
+          <!-- 验证码 -->
+          <view class="input-item" v-if="captchaEnabled">
+            <u-icon name="checkmark-circle" size="22" color="#909399"></u-icon>
+            <input 
+              class="input" 
+              type="number" 
+              v-model="loginForm.code" 
+              placeholder="请输入验证码" 
+              maxlength="4"
+            />
+            <view class="captcha-box" @click="getCode">
+              <image :src="codeUrl" mode="scaleToFill" class="captcha-img"></image>
+            </view>
+          </view>
+        </template>
+
+        <!-- 邮箱登录表单 -->
+        <template v-if="loginType === 'email'">
+          <!-- 邮箱 -->
+          <view class="input-item">
+            <u-icon name="email" size="22" color="#909399"></u-icon>
+            <input 
+              class="input" 
+              type="text" 
+              v-model="loginForm.email" 
+              placeholder="请输入邮箱" 
+            />
+          </view>
+
+          <!-- 邮箱验证码 -->
+          <view class="input-item">
+            <u-icon name="checkmark-circle" size="22" color="#909399"></u-icon>
+            <input 
+              class="input" 
+              type="text" 
+              v-model="loginForm.emailCode" 
+              placeholder="请输入邮箱验证码" 
+              maxlength="6"
+            />
+            <view class="code-text" @click="sendEmailCode" :class="{ disabled: emailCountdown > 0 }">
+              {{ emailCountdown > 0 ? `${emailCountdown}s后重发` : '获取验证码' }}
+            </view>
+          </view>
+        </template>
+
+        <!-- 号码验证登录表单 -->
+        <template v-if="loginType === 'phoneverify'">
+          <!-- 手机号 -->
+          <view class="input-item">
+            <u-icon name="phone" size="22" color="#909399"></u-icon>
+            <input 
+              class="input" 
+              type="number" 
+              v-model="loginForm.phonenumber" 
+              placeholder="请输入手机号" 
+              maxlength="11"
+            />
+          </view>
+
+          <!-- 号码验证码 -->
+          <view class="input-item">
+            <u-icon name="checkmark-circle" size="22" color="#909399"></u-icon>
+            <input 
+              class="input" 
+              type="text" 
+              v-model="loginForm.verifyCode" 
+              placeholder="请输入验证码" 
+              maxlength="6"
+            />
+            <view class="code-text" @click="sendPhoneCode" :class="{ disabled: phoneCountdown > 0 }">
+              {{ phoneCountdown > 0 ? `${phoneCountdown}s后重发` : '获取验证码' }}
+            </view>
+          </view>
+        </template>
+
+        <!-- 登录按钮 -->
+        <button class="submit-btn" @click="handleLogin">登 录</button>
+        
+        <!-- 其他登录方式 -->
+        <view class="other-login">
+          <view class="divider">
+            <text class="divider-text">其他登录方式</text>
+          </view>
+          <view class="social-buttons">
+            <view class="social-btn" @click="handleSocialLogin('wechat')">
+              <u-icon name="weixin-fill" size="40" color="#07C160"></u-icon>
+            </view>
+            <view class="social-btn" @click="handleSocialLogin('qq')">
+              <u-icon name="qq-fill" size="40" color="#12B7F5"></u-icon>
+            </view>
+            <view class="social-btn" @click="handleSocialLogin('weibo')">
+              <u-icon name="weibo" size="40" color="#E6162D"></u-icon>
+            </view>
+          </view>
+        </view>
       </view>
     </view>
 
-    <view class="xieyi text-center">
-      <text class="text-grey1">登录即代表同意</text>
-      <text @click="handleUserAgrement" class="text-blue">《用户协议》</text>
-      <text @click="handlePrivacy" class="text-blue">《隐私协议》</text>
+    <!-- 底部协议 -->
+    <view class="copyright">
+      <text class="text-grey">登录即代表同意</text>
+      <text class="highlight" @click="handleUserAgrement">《用户协议》</text>
+      <text class="text-grey">和</text>
+      <text class="highlight" @click="handlePrivacy">《隐私协议》</text>
     </view>
+    
+    <!-- 行为验证码组件 -->
+    <BehaviorCaptcha 
+      v-model="showCaptcha" 
+      :tenantId="loginForm.tenantId"
+      @success="handleCaptchaSuccess"
+      @fail="handleCaptchaFail"
+      @close="handleCaptchaClose"
+    />
   </view>
 </template>
-
 <script setup>
+import { ref } from "vue";
 import modal from '@/plugins/modal'
-import {getCodeImg, getTenantList} from '@/api/login'
-import {ref} from "vue";
+import { getCodeImg, getTenantList, getWebsiteConfig, getCaptchaConfig, getRegisterConfig, sendEmailVerifyCode, sendPhoneVerifyCode } from '@/api/login.js'
 import config from '@/config.js'
 import store from '@/store'
+import { showBehaviorCaptchaModal } from '@/utils/behaviorCaptcha'
+// BehaviorCaptcha 组件通过 easycom 自动导入（非H5平台使用）
+
+// 登录方式
+const loginType = ref('password'); // 'password', 'email', 'phoneverify'
+const showPassword = ref(false);
+const emailCountdown = ref(0);
+const phoneCountdown = ref(0);
+const showCaptcha = ref(false);
+const captchaCallback = ref(null); // 验证码成功后的回调
 
 const codeUrl = ref("");
 const captchaEnabled = ref(true);
@@ -57,28 +225,240 @@ const loginForm = ref({
   username: "admin",
   password: "admin123",
   code: "",
-  uuid: ''
+  uuid: '',
+  email: '',
+  emailCode: '',
+  phonenumber: '',
+  verifyCode: '',
+  grantType: 'password'
 });
 
 // 租户列表
 const tenantList = ref([]);
 const range = ref([]);
 
+// 注册开关
+const registerEnabled = ref(false);
+
+// 网站配置
+const websiteConfig = ref({
+  name: '',
+  logo: '',
+  copyright: '',
+  icp: ''
+});
+
+// 切换登录方式
+function switchLoginType(type) {
+  loginType.value = type;
+  // 清空相关表单字段
+  if (type === 'password') {
+    loginForm.value.email = '';
+    loginForm.value.emailCode = '';
+    loginForm.value.phonenumber = '';
+    loginForm.value.verifyCode = '';
+  } else if (type === 'email') {
+    loginForm.value.username = '';
+    loginForm.value.password = '';
+    loginForm.value.code = '';
+    loginForm.value.phonenumber = '';
+    loginForm.value.verifyCode = '';
+  } else if (type === 'phoneverify') {
+    loginForm.value.username = '';
+    loginForm.value.password = '';
+    loginForm.value.code = '';
+    loginForm.value.email = '';
+    loginForm.value.emailCode = '';
+  }
+}
+
+// 发送邮箱验证码
+async function sendEmailCode() {
+  if (emailCountdown.value > 0) return;
+  
+  if (!loginForm.value.email) {
+    modal.msgError("请输入邮箱地址");
+    return;
+  }
+  
+  // 验证邮箱格式
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(loginForm.value.email)) {
+    modal.msgError("请输入正确的邮箱地址");
+    return;
+  }
+  
+  // #ifdef H5
+  // H5平台使用TAC验证码
+  try {
+    const captchaId = await showBehaviorCaptchaModal({
+      tenantId: loginForm.value.tenantId
+    });
+    
+    // 验证成功，发送邮箱验证码
+    modal.loading("发送中...");
+    try {
+      const res = await sendEmailVerifyCode(loginForm.value.email, loginForm.value.tenantId, captchaId);
+      modal.closeLoading();
+      
+      if (res.code === 200) {
+        modal.msgSuccess("验证码已发送，请查收邮件");
+        startEmailCountdown();
+      } else {
+        modal.msgError(res.msg || "发送验证码失败");
+      }
+    } catch (error) {
+      modal.closeLoading();
+      modal.msgError("发送验证码失败");
+    }
+  } catch (error) {
+    console.log('用户取消验证或验证失败');
+  }
+  // #endif
+  
+  // #ifndef H5
+  // 非H5平台使用自定义组件
+  captchaCallback.value = async (captchaId) => {
+    try {
+      modal.loading("发送中...");
+      const res = await sendEmailVerifyCode(loginForm.value.email, loginForm.value.tenantId, captchaId);
+      modal.closeLoading();
+      
+      if (res.code === 200) {
+        modal.msgSuccess("验证码已发送，请查收邮件");
+        startEmailCountdown();
+      } else {
+        modal.msgError(res.msg || "发送验证码失败");
+      }
+    } catch (error) {
+      modal.closeLoading();
+      modal.msgError("发送验证码失败");
+    }
+  };
+  showCaptcha.value = true;
+  // #endif
+}
+
+// 发送号码验证码
+async function sendPhoneCode() {
+  if (phoneCountdown.value > 0) return;
+  
+  if (!loginForm.value.phonenumber) {
+    modal.msgError("请输入手机号");
+    return;
+  }
+  
+  // 验证手机号格式
+  const phoneRegex = /^1[3-9]\d{9}$/;
+  if (!phoneRegex.test(loginForm.value.phonenumber)) {
+    modal.msgError("请输入正确的手机号");
+    return;
+  }
+  
+  // #ifdef H5
+  // H5平台使用TAC验证码
+  try {
+    const captchaId = await showBehaviorCaptchaModal({
+      tenantId: loginForm.value.tenantId
+    });
+    
+    // 验证成功，发送号码验证码
+    modal.loading("发送中...");
+    try {
+      const res = await sendPhoneVerifyCode(loginForm.value.phonenumber, 'login', loginForm.value.tenantId, captchaId);
+      modal.closeLoading();
+      
+      if (res.code === 200 && res.data?.success) {
+        modal.msgSuccess("验证码已发送，请注意查收短信");
+        startPhoneCountdown();
+      } else {
+        modal.msgError(res.data?.message || res.msg || "发送验证码失败");
+      }
+    } catch (error) {
+      modal.closeLoading();
+      modal.msgError("发送验证码失败");
+    }
+  } catch (error) {
+    console.log('用户取消验证或验证失败');
+  }
+  // #endif
+  
+  // #ifndef H5
+  // 非H5平台使用自定义组件
+  captchaCallback.value = async (captchaId) => {
+    try {
+      modal.loading("发送中...");
+      const res = await sendPhoneVerifyCode(loginForm.value.phonenumber, 'login', loginForm.value.tenantId, captchaId);
+      modal.closeLoading();
+      
+      if (res.code === 200 && res.data?.success) {
+        modal.msgSuccess("验证码已发送，请注意查收短信");
+        startPhoneCountdown();
+      } else {
+        modal.msgError(res.data?.message || res.msg || "发送验证码失败");
+      }
+    } catch (error) {
+      modal.closeLoading();
+      modal.msgError("发送验证码失败");
+    }
+  };
+  showCaptcha.value = true;
+  // #endif
+}
+
+// 邮箱倒计时
+function startEmailCountdown() {
+  emailCountdown.value = 60;
+  const timer = setInterval(() => {
+    emailCountdown.value--;
+    if (emailCountdown.value <= 0) {
+      clearInterval(timer);
+    }
+  }, 1000);
+}
+
+// 号码倒计时
+function startPhoneCountdown() {
+  phoneCountdown.value = 60;
+  const timer = setInterval(() => {
+    phoneCountdown.value--;
+    if (phoneCountdown.value <= 0) {
+      clearInterval(timer);
+    }
+  }, 1000);
+}
+
+// 行为验证码成功回调
+function handleCaptchaSuccess(captchaId) {
+  if (captchaCallback.value) {
+    captchaCallback.value(captchaId);
+    captchaCallback.value = null;
+  }
+}
+
+// 行为验证码失败回调
+function handleCaptchaFail() {
+  console.log('行为验证失败');
+}
+
+// 行为验证码关闭回调
+function handleCaptchaClose() {
+  captchaCallback.value = null;
+}
+
 // 获取图形验证码
 function getCode() {
   getCodeImg().then(res => {
-    const {
-      data
-    } = res;
+    const { data } = res;
     captchaEnabled.value = data.captchaEnabled === undefined ? true : data.captchaEnabled;
-    //  captchaEnabled.value = res.captchaEnabled === undefined ? true : res.captchaEnabled
     if (captchaEnabled.value) {
-      codeUrl.value = 'data:image/gif;base64,' + data.img
+      codeUrl.value = data.img;
       loginForm.value.uuid = data.uuid
     }
   })
 };
 
+// 获取租户列表
 function getTenant() {
   getTenantList().then(res => {
     const data = res.data;
@@ -87,44 +467,128 @@ function getTenant() {
       tenantList.value = data.voList;
       if (tenantList.value != null && tenantList.value.length !== 0) {
         loginForm.value.tenantId = tenantList.value[0].tenantId;
-        tenantList.value.map(function (row){
-          range.value.push({value: row.tenantId, text: row.companyName})
-        });
+        range.value = tenantList.value.map(row => ({
+          value: row.tenantId,
+          text: row.companyName
+        }));
       }
     }
   })
 };
 
+// 获取网站配置
+async function fetchWebsiteConfig(tenantId) {
+  try {
+    const res = await getWebsiteConfig(tenantId);
+    if (res.data) {
+      websiteConfig.value = {
+        name: res.data.name || globalConfig.value.appInfo.title,
+        logo: res.data.logo || globalConfig.value.appInfo.logo,
+        copyright: res.data.copyright || '',
+        icp: res.data.icp || ''
+      };
+      // 更新 globalConfig
+      if (res.data.name) {
+        globalConfig.value.appInfo.title = res.data.name;
+      }
+      if (res.data.logo) {
+        globalConfig.value.appInfo.logo = res.data.logo;
+      }
+    }
+  } catch (error) {
+    console.error('获取网站配置失败:', error);
+  }
+}
+
+// 获取验证码配置
+async function fetchCaptchaConfig(tenantId) {
+  try {
+    const res = await getCaptchaConfig(tenantId);
+    if (res.code === 200 && res.data) {
+      captchaEnabled.value = res.data.captchaEnabled === undefined ? true : res.data.captchaEnabled;
+    }
+  } catch (error) {
+    console.error('获取验证码配置失败:', error);
+    captchaEnabled.value = true; // 默认开启
+  }
+}
+
+// 获取注册开关配置
+async function fetchRegisterConfig(tenantId) {
+  try {
+    const res = await getRegisterConfig(tenantId);
+    if (res.code === 200 && res.data) {
+      registerEnabled.value = res.data.registerEnabled === undefined ? false : res.data.registerEnabled;
+    }
+  } catch (error) {
+    console.error('获取注册开关配置失败:', error);
+    registerEnabled.value = false; // 默认关闭
+  }
+}
+
 async function handleLogin() {
-  if (loginForm.value.username === "") {
-    modal.msgError("请输入您的账号")
-  } else if (loginForm.value.password === "") {
-    modal.msgError("请输入您的密码")
-  } else if (loginForm.value.code === "" && captchaEnabled.value) {
-    modal.msgError("请输入验证码")
-  } else {
+  if (loginType.value === 'password') {
+    // 密码登录验证
+    if (loginForm.value.username === "") {
+      modal.msgError("请输入您的账号")
+      return;
+    }
+    if (loginForm.value.password === "") {
+      modal.msgError("请输入您的密码")
+      return;
+    }
+    if (loginForm.value.code === "" && captchaEnabled.value) {
+      modal.msgError("请输入验证码")
+      return;
+    }
+    loginForm.value.grantType = 'password';
     modal.loading("登录中，请耐心等待...")
-    await pwdLogin();
+    await doLogin();
+  } else if (loginType.value === 'email') {
+    // 邮箱登录验证
+    if (!loginForm.value.email) {
+      modal.msgError("请输入邮箱地址");
+      return;
+    }
+    if (!loginForm.value.emailCode) {
+      modal.msgError("请输入邮箱验证码");
+      return;
+    }
+    loginForm.value.grantType = 'email';
+    modal.loading("登录中，请耐心等待...")
+    await doLogin();
+  } else if (loginType.value === 'phoneverify') {
+    // 号码登录验证
+    if (!loginForm.value.phonenumber) {
+      modal.msgError("请输入手机号");
+      return;
+    }
+    if (!loginForm.value.verifyCode) {
+      modal.msgError("请输入验证码");
+      return;
+    }
+    loginForm.value.grantType = 'phoneverify';
+    modal.loading("登录中，请耐心等待...")
+    await doLogin();
   }
 };
 
-// 密码登录
-async function pwdLogin() {
+// 统一登录处理
+async function doLogin() {
   store.dispatch('Login', loginForm.value).then(() => {
     modal.closeLoading()
     loginSuccess()
   }).catch(() => {
-    if (captchaEnabled.value) {
-      modal.closeLoading()
+    modal.closeLoading()
+    // 如果是密码登录且需要验证码，重新获取验证码
+    if (loginType.value === 'password' && captchaEnabled.value) {
       getCode()
     }
   })
-};
+}
 
 function loginSuccess(result) {
-  // 设置用户信息
   store.dispatch('GetInfo').then(res => {
-
     uni.switchTab({
       url: '/pages/index'
     });
@@ -147,83 +611,317 @@ function handleUserAgrement() {
   });
 };
 
-getCode();
-getTenant();
-</script>
-
-<style lang="scss">
-page {
-  background-color: #ffffff;
+// 社交登录
+function handleSocialLogin(type) {
+  modal.msgError(`${type}登录功能待实现`);
+  // 这里需要调用后端社交登录的 API
+  // 例如: authBinding(type, loginForm.value.tenantId).then(...)
 }
 
-.normal-login-container {
+// 加载租户相关配置
+async function loadTenantConfig(tenantId) {
+  const tid = tenantId || loginForm.value.tenantId;
+  try {
+    // 并行加载所有配置
+    await Promise.all([
+      fetchWebsiteConfig(tid),
+      fetchCaptchaConfig(tid),
+      fetchRegisterConfig(tid)
+    ]);
+    // 如果需要验证码，重新获取
+    if (captchaEnabled.value) {
+      getCode();
+    }
+  } catch (error) {
+    console.error('加载租户配置失败:', error);
+  }
+}
+
+// 初始化加载配置
+async function initConfig() {
+  try {
+    // 先获取租户列表
+    await getTenant();
+    // 再加载当前租户的配置
+    await loadTenantConfig();
+  } catch (error) {
+    console.error('初始化配置失败:', error);
+  }
+}
+
+// 监听租户ID变化，重新加载配置
+function handleTenantChange(tenantId) {
+  loadTenantConfig(tenantId);
+}
+
+// 页面加载时初始化
+initConfig();
+</script>
+
+<style lang="scss" scoped>
+.login-container {
+  min-height: 100vh;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+}
+
+// 移动端头部 - 仿B端设计
+.mobile-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
   width: 100%;
+  padding: 30rpx 40rpx;
+  background: #ffffff;
+  border-bottom: 1rpx solid #f0f0f0;
+  
+  .mobile-logo {
+    width: 60rpx;
+    height: 60rpx;
+    margin-right: 20rpx;
+    border-radius: 12rpx;
+  }
+  
+  .mobile-title {
+    font-size: 36rpx;
+    font-weight: 700;
+    color: #1a1a1a;
+  }
+}
 
-  .logo-content {
-    width: 100%;
-    font-size: 21px;
-    text-align: center;
-    padding-top: 15%;
+// 内容区域
+.content-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 60rpx 60rpx 120rpx;
+}
 
-    image {
-      border-radius: 4px;
-    }
+.form-header {
+  margin-bottom: 60rpx;
+  text-align: left;
+  
+  .form-title {
+    display: block;
+    font-size: 56rpx;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 16rpx;
+    letter-spacing: -1rpx;
+  }
+  
+  .form-subtitle {
+    display: block;
+    font-size: 28rpx;
+    color: #8c8c8c;
+  }
+}
 
-    .title {
-      margin-left: 10px;
+// 登录方式切换
+.login-type-switch {
+  display: flex;
+  background: #f5f7fa;
+  border-radius: 12rpx;
+  padding: 6rpx;
+  margin-bottom: 60rpx;
+  
+  .switch-item {
+    flex: 1;
+    height: 70rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8rpx;
+    font-size: 24rpx;
+    color: #666;
+    font-weight: 500;
+    transition: all 0.3s;
+    
+    &.active {
+      background: #ffffff;
+      color: #1a1a1a;
+      font-weight: 600;
+      box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.08);
     }
   }
-  .uni-select {
-    width: 100%;
-  }
-  .login-form-content {
-    text-align: center;
-    margin: 20px auto;
-    margin-top: 15%;
-    width: 80%;
+}
 
-    .input-item {
-      margin: 20px auto;
-      background-color: #f5f6f7;
-      height: 45px;
-      border-radius: 20px;
-
-      .icon {
-        font-size: 38rpx;
-        margin-left: 10px;
+.form-section {
+  width: 100%;
+  
+  .input-item {
+    display: flex;
+    align-items: center;
+    background: #f5f7fa;
+    height: 100rpx;
+    border-radius: 12rpx;
+    padding: 0 30rpx;
+    margin-bottom: 30rpx;
+    transition: all 0.3s;
+    border: 2rpx solid transparent;
+    
+    &:focus-within {
+      background: #ffffff;
+      border-color: #667eea;
+      box-shadow: 0 0 0 4rpx rgba(102, 126, 234, 0.1);
+    }
+    
+    .input {
+      flex: 1;
+      height: 100%;
+      margin-left: 20rpx;
+      font-size: 28rpx;
+      color: #333;
+    }
+    
+    .eye-icon {
+      margin-left: 10rpx;
+      padding: 10rpx;
+    }
+    
+    .code-text {
+      font-size: 26rpx;
+      color: #667eea;
+      padding-left: 20rpx;
+      margin-left: 20rpx;
+      border-left: 1rpx solid #e0e0e0;
+      white-space: nowrap;
+      
+      &.disabled {
         color: #999;
       }
-
-      .input {
-        width: 100%;
-        font-size: 14px;
-        line-height: 20px;
-        text-align: left;
-        padding-left: 15px;
+    }
+    
+    .select-box {
+      flex: 1;
+      margin-left: 20rpx;
+      ::v-deep .uni-select {
+        border: none !important;
+        padding: 0;
       }
-
-
+      ::v-deep .uni-select__input-text {
+        font-size: 28rpx;
+        color: #333;
+      }
     }
-
-    .login-btn {
-      margin-top: 40px;
-      height: 45px;
+    
+    .captcha-box {
+      width: 200rpx;
+      height: 64rpx;
+      margin-left: 20rpx;
+      border-radius: 8rpx;
+      overflow: hidden;
+      
+      .captcha-img {
+        width: 100%;
+        height: 100%;
+      }
     }
-
-    .xieyi {
-      color: #333;
-      margin-top: 20px;
+  }
+  
+  .submit-btn {
+    width: 100%;
+    height: 90rpx;
+    line-height: 90rpx;
+    background: #667eea;
+    border-radius: 12rpx;
+    color: #fff;
+    font-size: 32rpx;
+    font-weight: 600;
+    margin-top: 60rpx;
+    border: none;
+    
+    &:active {
+      transform: scale(0.99);
+      background: #5a6fd1;
     }
+    
+    &::after {
+      border: none;
+    }
+  }
+}
 
-    .login-code {
-      height: 38px;
-      float: right;
+.copyright {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20rpx 0;
+  text-align: center;
+  font-size: 24rpx;
+  border-top: 1rpx solid #f0f0f0;
+  background: #fff;
+  
+  .text-grey {
+    color: #999;
+  }
+  
+  .highlight {
+    color: #667eea;
+  }
+}
 
-      .login-code-img {
-        height: 38px;
-        position: absolute;
-        margin-left: 10px;
-        width: 200rpx;
+.animate-fade-in {
+  animation: fadeIn 0.6s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// 其他登录方式
+.other-login {
+  margin-top: 60rpx;
+  
+  .divider {
+    position: relative;
+    text-align: center;
+    margin-bottom: 40rpx;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 1rpx;
+      background: #e8e8e8;
+    }
+    
+    .divider-text {
+      position: relative;
+      display: inline-block;
+      padding: 0 24rpx;
+      background: #fff;
+      color: #999;
+      font-size: 24rpx;
+      z-index: 1;
+    }
+  }
+  
+  .social-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 40rpx;
+    
+    .social-btn {
+      width: 80rpx;
+      height: 80rpx;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: #f5f7fa;
+      transition: all 0.3s;
+      
+      &:active {
+        transform: scale(0.95);
+        background: #ebeef5;
       }
     }
   }
