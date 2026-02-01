@@ -1,0 +1,383 @@
+﻿<template>
+  <!-- TAC楠岃瘉鐮佺粍浠?- 浣跨敤TAC寮€鍙戣€呯殑uni-app閫傞厤鐗?-->
+  <view class="tac-captcha-overlay" v-if="visible">
+    <!-- TAC楠岃瘉鐮佸鍣?-->
+    <view class="tac-captcha-container">
+      <view class="tac-header">
+        <text class="tac-title">瀹夊叏楠岃瘉</text>
+        <text class="tac-close" @click="closeTac">鉁?/text>
+      </view>
+      
+      <!-- TAC楠岃瘉鐮佸唴瀹瑰尯鍩?-->
+      <view class="tac-content">
+        <!-- 婊戝潡楠岃瘉鐮佺粍浠?-->
+        <captcha-slider 
+          v-if="currentCaptcha.target.captcha && currentCaptcha.target.captcha.type === 'SLIDER'"
+          :captcha-data="currentCaptcha.target.captcha" 
+          :tip="tip"
+          :captcha-valid="captchaValid">
+        </captcha-slider>
+        
+        <!-- 鎷兼帴杩樺師楠岃瘉鐮佺粍浠?-->
+        <captcha-concat 
+          v-if="currentCaptcha.target.captcha && currentCaptcha.target.captcha.type === 'CONCAT'"
+          :captcha-data="currentCaptcha.target.captcha" 
+          :tip="tip"
+          :captcha-valid="captchaValid">
+        </captcha-concat>
+        
+        <!-- 鍏朵粬楠岃瘉绫诲瀷鍙互鍚庣画娣诲姞 -->
+        <!-- <captcha-rotate v-if="currentCaptcha.target.captcha && currentCaptcha.target.captcha.type === 'ROTATE'"/> -->
+        <!-- <captcha-click v-if="currentCaptcha.target.captcha && currentCaptcha.target.captcha.type === 'WORD_IMAGE_CLICK'"/> -->
+      </view>
+      
+      <!-- 搴曢儴鎿嶄綔鎸夐挳 -->
+      <view class="slider-bottom">
+        <view class="close-btn" @click="closeTac"></view>
+        <view class="refresh-btn" @click="refresh"></view>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script setup lang="ts">
+import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import config from '@/config'
+import { getBehaviorCaptcha } from '@/api/login'
+import CaptchaSlider from './captcha-slider.vue'
+import CaptchaConcat from './captcha-concat.vue'
+
+// Props
+interface Props {
+  visible: boolean
+  type?: string
+  contact?: string
+  captchaType?: string  // 楠岃瘉鐮佺被鍨嬶細SLIDER, CONCAT, ROTATE, WORD_IMAGE_CLICK
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  visible: false,
+  type: 'sms',
+  contact: '',
+  captchaType: 'SLIDER'
+})
+
+// Emits
+const emit = defineEmits<{
+  validSuccess: [res: any, c: any, tac: any]
+  validFail: [res: any, c: any, tac: any]
+  btnRefreshFun: [el: any, tac: any]
+  btnCloseFun: [el: any, tac: any]
+}>()
+
+// 楠岃瘉鐮佹暟鎹?
+const tip = ref<{
+  msg: string
+  type?: number
+  showTips?: boolean
+}>({
+  msg: "鎷栧姩婊戝潡瀹屾垚鎷煎浘"
+})
+
+const currentCaptcha = ref<{
+  target: {
+    id: string
+    captcha: {
+      type: string
+      backgroundImage: string
+      templateImage: string
+      backgroundImageHeight?: number
+      backgroundImageWidth?: number
+      templateImageWidth?: number
+      templateImageHeight?: number
+      data?: any
+    }
+  }
+}>({
+  target: {
+    id: '',
+    captcha: {
+      type: 'SLIDER',
+      backgroundImage: "",
+      templateImage: ""
+    }
+  }
+})
+
+// 鐩戝惉visible鍙樺寲锛屽垵濮嬪寲楠岃瘉鐮?
+watch(() => props.visible, async (newVisible, oldVisible) => {
+  console.log('TAC缁勪欢鍙鎬у彉鍖?', { from: oldVisible, to: newVisible })
+  
+  if (newVisible) {
+    console.log('TAC缁勪欢鏄剧ず锛屽噯澶囧姞杞介獙璇佺爜...')
+    try {
+      await nextTick()
+      await refresh()
+    } catch (error) {
+      console.error('TAC楠岃瘉鐮佸姞杞藉け璐?', error)
+      emit('btnCloseFun', null, null)
+    }
+  } else {
+    console.log('TAC缁勪欢闅愯棌锛屾竻鐞嗘暟鎹?..')
+    destroyCaptcha()
+  }
+}, { immediate: false })
+
+// 缁勪欢鎸傝浇鏃惰緭鍑烘棩蹇?
+onMounted(() => {
+  console.log('TAC缁勪欢宸叉寕杞斤紝褰撳墠 visible:', props.visible)
+  console.log('TAC缁勪欢 props:', props)
+})
+
+// 楠岃瘉鐮侀獙璇佸嚱鏁?
+function captchaValid(requestData: any) {
+  console.log('寮€濮嬮獙璇佹粦鍧楁暟鎹?', requestData)
+  
+  // 杞ㄨ抗鏁版嵁鏍囧噯鍖栧鐞嗭紙鍙傝€僒AC寮€鍙戣€呭疄鐜帮級
+  if (requestData.trackList && requestData.trackList.length > 0) {
+    for (let i = 0; i < requestData.trackList.length; i++) {
+      let track = requestData.trackList[i];
+      if (requestData.startX !== undefined && requestData.startY !== undefined) {
+        track.x = track.x - requestData.startX;  // 杞崲涓虹浉瀵瑰潗鏍?
+        track.y = track.y - requestData.startY;
+      }
+    }
+  }
+  
+  // 娓呯悊涓嶉渶瑕佺殑瀛楁
+  delete requestData.startX;
+  delete requestData.startY;
+  delete requestData.left;
+  delete requestData.top;
+  
+  // 鍙戦€侀獙璇佽姹?
+  const baseUrl = config.baseUrl || 'http://localhost:8080';
+  uni.request({
+    url: `${baseUrl}/auth/behavior/check?type=${props.type}&contact=${encodeURIComponent(props.contact)}`,
+    method: "POST",
+    data: {
+      id: currentCaptcha.value.target.id,
+      data: requestData  // 鐩存帴鍙戦€佽建杩规暟鎹?
+    },
+    success: (res: any) => {
+      console.log('楠岃瘉鍝嶅簲:', res.data)
+      let resData = res.data;
+      
+      if (resData.code !== 200) {
+        // 鏍￠獙澶辫触
+        showTips("璇峰啀璇曚竴娆?, 0, () => {
+          refresh();
+        })
+        emit('validFail', resData, null, null)
+      } else {
+        // 鏍￠獙鎴愬姛
+        showTips("楠岃瘉鎴愬姛", 1, () => {
+          emit('validSuccess', resData, null, null)
+        })
+      }
+    },
+    fail: (error: any) => {
+      console.error('楠岃瘉璇锋眰澶辫触:', error)
+      showTips("缃戠粶閿欒锛岃閲嶈瘯", 0, () => {
+        refresh();
+      })
+      emit('validFail', { code: 500, msg: '缃戠粶閿欒' }, null, null)
+    }
+  })
+}
+
+// 鍒锋柊楠岃瘉鐮?
+async function refresh() {
+  console.log('鍒锋柊楠岃瘉鐮?..')
+  
+  try {
+    // 璋冪敤鍚庣鑾峰彇楠岃瘉鐮佹暟鎹?
+    const response = await getBehaviorCaptcha()
+    console.log('鑾峰彇楠岃瘉鐮佹暟鎹?', response)
+    console.log('response.data:', response.data)
+    console.log('response.data.captcha:', response.data?.captcha)
+    
+    // 澶勭悊鍝嶅簲鏁版嵁缁撴瀯
+    let captchaInfo: any
+    if (response && response.data) {
+      captchaInfo = response.data
+    } else if (response) {
+      captchaInfo = response
+    } else {
+      throw new Error('鑾峰彇楠岃瘉鐮佹暟鎹け璐?)
+    }
+    
+    // 璁剧疆楠岃瘉鐮佹暟鎹?- 澶勭悊鏍囧噯TAC鏍煎紡
+    const captchaData = {
+      id: captchaInfo.id,
+      captcha: {
+        type: captchaInfo.captcha?.type || props.captchaType || 'SLIDER',
+        backgroundImage: captchaInfo.captcha?.backgroundImage || captchaInfo.backgroundImage,
+        templateImage: captchaInfo.captcha?.templateImage || captchaInfo.templateImage,
+        backgroundImageHeight: captchaInfo.captcha?.backgroundImageHeight || captchaInfo.backgroundImageHeight || 360,
+        backgroundImageWidth: captchaInfo.captcha?.backgroundImageWidth || captchaInfo.backgroundImageWidth || 600,
+        templateImageWidth: captchaInfo.captcha?.templateImageWidth || captchaInfo.templateImageWidth || 110,
+        templateImageHeight: captchaInfo.captcha?.templateImageHeight || captchaInfo.templateImageHeight || 360,
+        data: captchaInfo.captcha?.data || captchaInfo.data
+      }
+    }
+    
+    if (!captchaData.id || !captchaData.captcha.backgroundImage) {
+      console.error('楠岃瘉鐮佹暟鎹笉瀹屾暣:', captchaData)
+      throw new Error('楠岃瘉鐮佹暟鎹笉瀹屾暣')
+    }
+    
+    // 瀵逛簬SLIDER绫诲瀷锛岄渶瑕乼emplateImage
+    if (captchaData.captcha.type === 'SLIDER' && !captchaData.captcha.templateImage) {
+      console.error('婊戝潡楠岃瘉鐮佺己灏憈emplateImage:', captchaData)
+      throw new Error('婊戝潡楠岃瘉鐮佹暟鎹笉瀹屾暣')
+    }
+    
+    doLoadCaptcha(captchaData)
+    
+    // 瑙﹀彂鍒锋柊鍥炶皟
+    emit('btnRefreshFun', null, null)
+  } catch (error) {
+    console.error('鍒锋柊楠岃瘉鐮佸け璐?', error)
+    uni.showToast({
+      title: '鑾峰彇楠岃瘉鐮佸け璐?,
+      duration: 1000,
+      icon: "error",
+    })
+  }
+}
+
+// 鍔犺浇楠岃瘉鐮佹暟鎹?
+function doLoadCaptcha(data: any) {
+  destroyCaptcha(() => {
+    setTimeout(() => {
+      openCaptcha(data);
+    }, 300)
+  })
+}
+
+// 鎵撳紑楠岃瘉鐮?
+function openCaptcha(data: any) {
+  console.log('鎵撳紑楠岃瘉鐮?', data)
+  currentCaptcha.value.target = data
+}
+
+// 閿€姣侀獙璇佺爜
+function destroyCaptcha(callback?: Function) {
+  if (currentCaptcha.value.target.id) {
+    setTimeout(() => {
+      currentCaptcha.value.target = {
+        id: '',
+        captcha: {
+          type: props.captchaType || 'SLIDER',
+          backgroundImage: "",
+          templateImage: ""
+        }
+      }
+      tip.value = { msg: "鎷栧姩婊戝潡瀹屾垚鎷煎浘" }
+      
+      if (callback) {
+        callback();
+      }
+    }, 200)
+  } else {
+    if (callback) {
+      callback();
+    }
+  }
+}
+
+// 鏄剧ず鎻愮ず淇℃伅
+function showTips(msg: string, type: number, callback?: Function) {
+  tip.value = {
+    msg: msg,
+    type: type,        // 0-閿欒锛?-鎴愬姛
+    showTips: true,
+  }
+  
+  // 寤舵椂鎵ц鍥炶皟
+  if (callback) {
+    setTimeout(callback, 1000);
+  }
+}
+
+// 鍏抽棴TAC楠岃瘉鐮?
+function closeTac() {
+  console.log('鍏抽棴TAC楠岃瘉鐮?)
+  destroyCaptcha()
+  emit('btnCloseFun', null, null)
+}
+
+// 缁勪欢鍗歌浇鏃舵竻鐞?
+onUnmounted(() => {
+  destroyCaptcha()
+})
+</script>
+
+<style scoped>
+.tac-captcha-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tac-captcha-container {
+  width: 90%;
+  max-width: 350px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  padding: 8px;
+  border: 1px solid #ccc;
+}
+
+.tac-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e5e5;
+  background: linear-gradient(to bottom, #ffffff 0%, #f8f8f8 100%);
+}
+
+.tac-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  letter-spacing: 0.5px;
+}
+
+.tac-close {
+  font-size: 22px;
+  color: #999;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.tac-close:active {
+  background-color: #f0f0f0;
+  color: #666;
+}
+
+.tac-content {
+  height: auto;
+  min-height: 260px;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  padding: 10px;
+}
+

@@ -20,6 +20,15 @@ export default defineConfig(() => {
                 }
             }
         },
+        css: {
+            preprocessorOptions: {
+                scss: {
+                    // 抑制 Sass 弃用警告
+                    silenceDeprecations: ['legacy-js-api', 'import', 'global-builtin'],
+                    api: 'modern-compiler' // 使用现代编译器
+                }
+            }
+        },
         plugins: [
             uni()
         ],

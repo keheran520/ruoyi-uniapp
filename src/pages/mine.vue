@@ -1,5 +1,8 @@
 <template>
   <view class="mine-container">
+    <!-- 顶部安全区域 -->
+    <SafeArea position="top" backgroundColor="transparent" />
+    
     <!-- 自定义顶部导航栏 (参考小红书) -->
     <view class="custom-navbar">
       <view class="navbar-left" @click="showDrawer = true">
@@ -260,6 +263,7 @@ import { onShow } from '@dcloudio/uni-app'
 import store from '@/store'
 import config from '@/config'
 import { getMemberInfo, checkin, getCheckinStatus } from '@/api/mobile/member'
+import SafeArea from '@/components/SafeArea/SafeArea.vue'
 
 const name = store.state.user.name
 const avatar = ref(store.state.user.avatar)

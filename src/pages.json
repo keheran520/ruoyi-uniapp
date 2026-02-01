@@ -8,7 +8,8 @@
       "qiun-(.*)": "@/components/qiun-data-charts/components/qiun-$1/qiun-$1.vue",
       "geek-(.*)": "@/components/geek-xd/components/geek-$1/geek-$1.vue",
       "gx-(.*)": "@/components/geek-xd/components/geek-$1/geek-$1.vue",
-      "^BehaviorCaptcha$": "@/components/BehaviorCaptcha/BehaviorCaptcha.vue"
+      "^SafeArea$": "@/components/SafeArea/SafeArea.vue",
+      "^tac-captcha$": "@/components/tac-captcha/tac-captcha.vue"
     }
   },
   "pages": [

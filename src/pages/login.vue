@@ -1,5 +1,8 @@
 <template>
   <view class="login-container">
+    <!-- 顶部安全区域 -->
+    <SafeArea position="top" backgroundColor="#ffffff" />
+    
     <!-- 顶部头部 (仿B端移动端设计) -->
     <view class="mobile-header">
       <image class="mobile-logo" :src="globalConfig.appInfo.logo" mode="aspectFit"></image>
@@ -189,32 +192,35 @@
       <text class="highlight" @click="handlePrivacy">《隐私协议》</text>
     </view>
     
-    <!-- 行为验证码组件 -->
-    <BehaviorCaptcha 
-      v-model="showCaptcha" 
-      :tenantId="loginForm.tenantId"
-      @success="handleCaptchaSuccess"
-      @fail="handleCaptchaFail"
-      @close="handleCaptchaClose"
+    <!-- 底部安全区域 -->
+    <SafeArea position="bottom" backgroundColor="#ffffff" />
+    
+    <!-- TAC验证码组件 -->
+    <TacCaptcha
+      :visible="showTacCaptcha"
+      :type="tacCaptchaType"
+      :contact="tacCaptchaContact"
+      @validSuccess="handleTacCaptchaSuccess"
+      @validFail="handleTacCaptchaFail"
+      @btnCloseFun="handleTacCaptchaClose"
     />
   </view>
 </template>
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import modal from '@/plugins/modal'
 import { getCodeImg, getTenantList, getWebsiteConfig, getCaptchaConfig, getRegisterConfig, sendEmailVerifyCode, sendPhoneVerifyCode } from '@/api/login.js'
 import config from '@/config.js'
 import store from '@/store'
 import { showBehaviorCaptchaModal } from '@/utils/behaviorCaptcha'
-// BehaviorCaptcha 组件通过 easycom 自动导入（非H5平台使用）
+import SafeArea from '@/components/SafeArea/SafeArea.vue'
+import TacCaptcha from '@/components/tac-captcha/tac-captcha.vue'
 
 // 登录方式
 const loginType = ref('password'); // 'password', 'email', 'phoneverify'
 const showPassword = ref(false);
 const emailCountdown = ref(0);
 const phoneCountdown = ref(0);
-const showCaptcha = ref(false);
-const captchaCallback = ref(null); // 验证码成功后的回调
 
 const codeUrl = ref("");
 const captchaEnabled = ref(true);
@@ -247,6 +253,85 @@ const websiteConfig = ref({
   copyright: '',
   icp: ''
 });
+
+// TAC验证码组件状态
+const showTacCaptcha = ref(false);
+const tacCaptchaType = ref('sms'); // 'sms' 或 'email'
+const tacCaptchaContact = ref(''); // 手机号或邮箱
+let tacCaptchaResolve = null;
+let tacCaptchaReject = null;
+
+// 监听显示验证码事件
+const handleShowBehaviorCaptcha = (options) => {
+  console.log('收到显示验证码事件:', options);
+  console.log('当前 showTacCaptcha 值:', showTacCaptcha.value);
+  
+  // 设置验证码类型和联系方式
+  tacCaptchaType.value = options.type || 'sms';
+  tacCaptchaContact.value = options.contact || '';
+  
+  console.log('设置后 tacCaptchaType:', tacCaptchaType.value);
+  console.log('设置后 tacCaptchaContact:', tacCaptchaContact.value);
+  
+  // 保存回调函数
+  tacCaptchaResolve = options.onSuccess;
+  tacCaptchaReject = options.onFail;
+  
+  // 显示验证码组件
+  showTacCaptcha.value = true;
+  console.log('设置后 showTacCaptcha:', showTacCaptcha.value);
+};
+
+// TAC验证码成功回调
+const handleTacCaptchaSuccess = (res) => {
+  console.log('TAC验证码验证成功:', res);
+  showTacCaptcha.value = false;
+  
+  // 获取验证码ID
+  const captchaId = res?.data || res?.id || '';
+  console.log('获取到的captchaId:', captchaId);
+  
+  if (tacCaptchaResolve) {
+    tacCaptchaResolve(captchaId);
+    tacCaptchaResolve = null;
+    tacCaptchaReject = null;
+  }
+};
+
+// TAC验证码失败回调
+const handleTacCaptchaFail = (res) => {
+  console.log('TAC验证码验证失败:', res);
+  // 不关闭组件，允许重试
+  
+  if (tacCaptchaReject) {
+    tacCaptchaReject();
+  }
+};
+
+// TAC验证码关闭回调
+const handleTacCaptchaClose = () => {
+  console.log('TAC验证码关闭');
+  showTacCaptcha.value = false;
+  
+  if (tacCaptchaReject) {
+    tacCaptchaReject();
+    tacCaptchaResolve = null;
+    tacCaptchaReject = null;
+  }
+};
+
+// 组件挂载时注册事件监听
+onMounted(() => {
+  uni.$on('showBehaviorCaptcha', handleShowBehaviorCaptcha);
+  // 初始化配置
+  initConfig();
+});
+
+// 组件卸载时移除事件监听
+onUnmounted(() => {
+  uni.$off('showBehaviorCaptcha', handleShowBehaviorCaptcha);
+});
+
 
 // 切换登录方式
 function switchLoginType(type) {
@@ -288,11 +373,12 @@ async function sendEmailCode() {
     return;
   }
   
-  // #ifdef H5
-  // H5平台使用TAC验证码
+  // 统一使用 showBehaviorCaptchaModal（自动适配H5和非H5平台）
   try {
     const captchaId = await showBehaviorCaptchaModal({
-      tenantId: loginForm.value.tenantId
+      tenantId: loginForm.value.tenantId,
+      type: 'email',                          // 邮箱验证码类型
+      contact: loginForm.value.email          // 传递邮箱地址
     });
     
     // 验证成功，发送邮箱验证码
@@ -309,34 +395,13 @@ async function sendEmailCode() {
       }
     } catch (error) {
       modal.closeLoading();
+      console.error('发送验证码失败:', error);
       modal.msgError("发送验证码失败");
     }
   } catch (error) {
-    console.log('用户取消验证或验证失败');
+    console.log('用户取消验证或验证失败:', error);
+    // 用户取消或验证失败，不显示错误提示，允许重新尝试
   }
-  // #endif
-  
-  // #ifndef H5
-  // 非H5平台使用自定义组件
-  captchaCallback.value = async (captchaId) => {
-    try {
-      modal.loading("发送中...");
-      const res = await sendEmailVerifyCode(loginForm.value.email, loginForm.value.tenantId, captchaId);
-      modal.closeLoading();
-      
-      if (res.code === 200) {
-        modal.msgSuccess("验证码已发送，请查收邮件");
-        startEmailCountdown();
-      } else {
-        modal.msgError(res.msg || "发送验证码失败");
-      }
-    } catch (error) {
-      modal.closeLoading();
-      modal.msgError("发送验证码失败");
-    }
-  };
-  showCaptcha.value = true;
-  // #endif
 }
 
 // 发送号码验证码
@@ -355,11 +420,12 @@ async function sendPhoneCode() {
     return;
   }
   
-  // #ifdef H5
-  // H5平台使用TAC验证码
+  // 统一使用 showBehaviorCaptchaModal（自动适配H5和非H5平台）
   try {
     const captchaId = await showBehaviorCaptchaModal({
-      tenantId: loginForm.value.tenantId
+      tenantId: loginForm.value.tenantId,
+      type: 'phoneverify',                    // 号码验证类型
+      contact: loginForm.value.phonenumber    // 传递手机号
     });
     
     // 验证成功，发送号码验证码
@@ -376,34 +442,13 @@ async function sendPhoneCode() {
       }
     } catch (error) {
       modal.closeLoading();
+      console.error('发送验证码失败:', error);
       modal.msgError("发送验证码失败");
     }
   } catch (error) {
-    console.log('用户取消验证或验证失败');
+    console.log('用户取消验证或验证失败:', error);
+    // 用户取消或验证失败，不显示错误提示，允许重新尝试
   }
-  // #endif
-  
-  // #ifndef H5
-  // 非H5平台使用自定义组件
-  captchaCallback.value = async (captchaId) => {
-    try {
-      modal.loading("发送中...");
-      const res = await sendPhoneVerifyCode(loginForm.value.phonenumber, 'login', loginForm.value.tenantId, captchaId);
-      modal.closeLoading();
-      
-      if (res.code === 200 && res.data?.success) {
-        modal.msgSuccess("验证码已发送，请注意查收短信");
-        startPhoneCountdown();
-      } else {
-        modal.msgError(res.data?.message || res.msg || "发送验证码失败");
-      }
-    } catch (error) {
-      modal.closeLoading();
-      modal.msgError("发送验证码失败");
-    }
-  };
-  showCaptcha.value = true;
-  // #endif
 }
 
 // 邮箱倒计时
@@ -426,24 +471,6 @@ function startPhoneCountdown() {
       clearInterval(timer);
     }
   }, 1000);
-}
-
-// 行为验证码成功回调
-function handleCaptchaSuccess(captchaId) {
-  if (captchaCallback.value) {
-    captchaCallback.value(captchaId);
-    captchaCallback.value = null;
-  }
-}
-
-// 行为验证码失败回调
-function handleCaptchaFail() {
-  console.log('行为验证失败');
-}
-
-// 行为验证码关闭回调
-function handleCaptchaClose() {
-  captchaCallback.value = null;
 }
 
 // 获取图形验证码
@@ -653,9 +680,6 @@ async function initConfig() {
 function handleTenantChange(tenantId) {
   loadTenantConfig(tenantId);
 }
-
-// 页面加载时初始化
-initConfig();
 </script>
 
 <style lang="scss" scoped>
@@ -675,19 +699,20 @@ initConfig();
   width: 100%;
   padding: 30rpx 40rpx;
   background: #ffffff;
-  border-bottom: 1rpx solid #f0f0f0;
   
   .mobile-logo {
-    width: 60rpx;
-    height: 60rpx;
+    width: 80rpx;
+    height: 80rpx;
     margin-right: 20rpx;
-    border-radius: 12rpx;
+    border-radius: 16rpx;
+    flex-shrink: 0;
   }
   
   .mobile-title {
-    font-size: 36rpx;
+    font-size: 40rpx;
     font-weight: 700;
     color: #1a1a1a;
+    flex-shrink: 0;
   }
 }
 
@@ -696,17 +721,18 @@ initConfig();
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  padding: 60rpx 60rpx 120rpx;
+  padding: 40rpx 60rpx 120rpx;
+  overflow-y: auto;
 }
 
 .form-header {
-  margin-bottom: 60rpx;
+  margin-bottom: 50rpx;
   text-align: left;
+  padding-top: 20rpx;
   
   .form-title {
     display: block;
-    font-size: 56rpx;
+    font-size: 52rpx;
     font-weight: 700;
     color: #1a1a1a;
     margin-bottom: 16rpx;
@@ -726,16 +752,16 @@ initConfig();
   background: #f5f7fa;
   border-radius: 12rpx;
   padding: 6rpx;
-  margin-bottom: 60rpx;
+  margin-bottom: 50rpx;
   
   .switch-item {
     flex: 1;
-    height: 70rpx;
+    height: 68rpx;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 8rpx;
-    font-size: 24rpx;
+    font-size: 26rpx;
     color: #666;
     font-weight: 500;
     transition: all 0.3s;
@@ -756,10 +782,10 @@ initConfig();
     display: flex;
     align-items: center;
     background: #f5f7fa;
-    height: 100rpx;
+    min-height: 96rpx;
     border-radius: 12rpx;
     padding: 0 30rpx;
-    margin-bottom: 30rpx;
+    margin-bottom: 28rpx;
     transition: all 0.3s;
     border: 2rpx solid transparent;
     
@@ -771,7 +797,7 @@ initConfig();
     
     .input {
       flex: 1;
-      height: 100%;
+      height: 96rpx;
       margin-left: 20rpx;
       font-size: 28rpx;
       color: #333;
@@ -824,14 +850,14 @@ initConfig();
   
   .submit-btn {
     width: 100%;
-    height: 90rpx;
-    line-height: 90rpx;
+    height: 88rpx;
+    line-height: 88rpx;
     background: #667eea;
     border-radius: 12rpx;
     color: #fff;
     font-size: 32rpx;
     font-weight: 600;
-    margin-top: 60rpx;
+    margin-top: 50rpx;
     border: none;
     
     &:active {
@@ -846,10 +872,6 @@ initConfig();
 }
 
 .copyright {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
   padding: 20rpx 0;
   text-align: center;
   font-size: 24rpx;
@@ -876,7 +898,7 @@ initConfig();
 
 // 其他登录方式
 .other-login {
-  margin-top: 60rpx;
+  margin-top: 50rpx;
   
   .divider {
     position: relative;

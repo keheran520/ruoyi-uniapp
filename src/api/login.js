@@ -185,3 +185,21 @@ export function getRegisterConfig(tenantId) {
     method: 'get'
   });
 }
+
+/**
+ * 获取行为验证码数据
+ * @param tenantId 租户ID
+ */
+export function getBehaviorCaptcha(tenantId) {
+  return request({
+    url: '/captcha/gen',
+    headers: {
+      isToken: false,
+      'X-Tenant-Id': tenantId || '000000'
+    },
+    method: 'POST',
+    data: {
+      type: 'SLIDER' // 滑动验证码类型
+    }
+  });
+}

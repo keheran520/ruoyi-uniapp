@@ -1,8 +1,8 @@
 /**
  * 行为验证码工具类
- * 适配 uni-app，支持 H5 使用 TAC 验证码
+ * 适配 uni-app，支持 H5 使用 TAC 验证码，非H5使用 tac-captcha 组件
  */
-import request from './request';
+import config from '@/config'
 
 // #ifdef H5
 declare global {
@@ -90,47 +90,16 @@ export function cleanupBehaviorCaptcha() {
 // #endif
 
 /**
- * 生成行为验证码
- * @param tenantId 租户ID
- */
-export function genBehaviorCaptcha(tenantId?: string) {
-  return request({
-    url: '/captcha/gen',
-    headers: {
-      isToken: false,
-      'X-Tenant-Id': tenantId || '000000'
-    },
-    method: 'POST',
-    data: {
-      type: 'SLIDER' // 滑动验证码类型
-    }
-  });
-}
-
-/**
- * 校验行为验证码
- * @param params 验证参数
- */
-export function checkBehaviorCaptcha(params: { id: string; data: string }) {
-  return request({
-    url: '/captcha/check',
-    headers: {
-      isToken: false
-    },
-    method: 'POST',
-    data: params
-  });
-}
-
-/**
  * 显示TAC行为验证码
  * H5平台：直接加载TAC SDK
- * 非H5平台：使用webview打开验证码页面
+ * 非H5平台：使用 tac-captcha 组件（通过事件通信）
  * @param options 配置选项
  * @returns Promise<string> 验证成功返回 captchaId
  */
 export function showBehaviorCaptchaModal(options: {
   tenantId?: string;
+  type?: string;        // 验证码业务类型：sms, email, phoneverify 等
+  contact?: string;     // 联系方式（手机号或邮箱）
   onSuccess?: (captchaId: string) => void;
   onFail?: () => void;
   onClose?: () => void;
@@ -231,53 +200,33 @@ export function showBehaviorCaptchaModal(options: {
   // #endif
   
   // #ifndef H5
-  // 非H5平台使用webview
+  // 非H5平台使用 tac-captcha 组件（通过事件通信）
   return new Promise((resolve, reject) => {
-    // 清空上次结果
-    const app = getApp();
-    if (app.globalData) {
-      app.globalData.captchaResult = null;
-    }
+    console.log('📱 非H5平台：触发显示验证码事件', {
+      tenantId: options.tenantId,
+      type: options.type,
+      contact: options.contact
+    });
     
-    // 打开webview页面
-    uni.navigateTo({
-      url: `/pages/common/captcha/index?apiBase=${encodeURIComponent(options.apiBase || '/dev-api')}&tenantId=${options.tenantId || '000000'}`,
-      success: () => {
-        console.log('打开验证码页面成功');
-        
-        // 设置定时器检查结果
-        const checkInterval = setInterval(() => {
-          const result = app.globalData?.captchaResult;
-          
-          if (result) {
-            clearInterval(checkInterval);
-            
-            if (result.success) {
-              console.log('验证成功，captchaId:', result.captchaId);
-              options.onSuccess?.(result.captchaId);
-              resolve(result.captchaId);
-            } else {
-              console.log('验证失败或取消');
-              options.onFail?.();
-              reject(new Error(result.error || '验证失败'));
-            }
-            
-            // 清空结果
-            app.globalData.captchaResult = null;
-          }
-        }, 100);
-        
-        // 30秒超时
-        setTimeout(() => {
-          clearInterval(checkInterval);
-          if (!app.globalData?.captchaResult) {
-            reject(new Error('验证超时'));
-          }
-        }, 30000);
+    // 使用 uni.$emit 触发显示验证码组件
+    uni.$emit('showBehaviorCaptcha', {
+      tenantId: options.tenantId || '000000',
+      type: options.type || 'sms',           // 传递业务类型
+      contact: options.contact || '',         // 传递联系方式
+      onSuccess: (captchaId: string) => {
+        console.log('✅ 验证成功，captchaId:', captchaId);
+        options.onSuccess?.(captchaId);
+        resolve(captchaId);
       },
-      fail: (err) => {
-        console.error('打开验证码页面失败', err);
-        reject(new Error('打开验证码页面失败'));
+      onFail: () => {
+        console.log('❌ 验证失败');
+        options.onFail?.();
+        reject(new Error('验证失败'));
+      },
+      onClose: () => {
+        console.log('🚪 用户关闭验证码');
+        options.onClose?.();
+        reject(new Error('用户关闭验证码'));
       }
     });
   });
