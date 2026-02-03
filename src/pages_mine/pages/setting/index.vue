@@ -1,20 +1,10 @@
 <template>
   <view class="setting-page">
-    <!-- 自定义导航栏 -->
-    <view class="custom-navbar">
-      <!-- 非H5端顶部安全区域 -->
-<!--      &lt;!&ndash; #ifndef H5 &ndash;&gt;-->
-<!--      <view :style="{height: statusBarHeight + 'px'}"></view>-->
-<!--      &lt;!&ndash; #endif &ndash;&gt;-->
-    </view>
-    
-    <!-- 内容区域 -->
-    <scroll-view class="scroll-content" scroll-y :style="{height: scrollHeight + 'px'}">
       <!-- 账号与安全 -->
       <CustomCellGroup>
         <CustomCell 
           title="账号与安全" 
-          icon="lock-fill"
+          icon="lock"
           :isLink="true"
           @click="handleToSecurity"
         />
@@ -24,25 +14,25 @@
       <CustomCellGroup>
         <CustomCell 
           title="通用设置" 
-          icon="setting-fill"
+          icon="setting"
           :isLink="true"
           @click="handleToGeneral"
         />
         <CustomCell 
           title="通知设置" 
-          icon="bell-fill"
+          icon="bell"
           :isLink="true"
           @click="handleToNotification"
         />
         <CustomCell 
           title="多语言和翻译" 
-          icon="chat-fill"
+          icon="chat"
           :isLink="true"
           @click="handleToLanguage"
         />
         <CustomCell 
           title="隐私设置" 
-          icon="lock-fill"
+          icon="lock"
           :isLink="true"
           @click="handleToPrivacy"
         />
@@ -52,32 +42,32 @@
       <CustomCellGroup>
         <CustomCell 
           title="存储空间" 
-          icon="trash-fill"
+          icon="trash"
           :value="storageSize"
           :isLink="true"
           @click="handleCleanStorage"
         />
         <CustomCell 
           title="内容偏好调节" 
-          icon="list-fill"
+          icon="list"
           :isLink="true"
           @click="handleToContentPreference"
         />
         <CustomCell 
           title="收货地址" 
-          icon="map-pin-fill"
+          icon="map"
           :isLink="true"
           @click="handleToAddress"
         />
         <CustomCell 
           title="添加小组件" 
-          icon="grid-fill"
+          icon="grid"
           :isLink="true"
           @click="handleToWidget"
         />
         <CustomCell 
           title="未成年人模式" 
-          icon="shield-fill"
+          icon="shield"
           value="未开启"
           :isLink="true"
           @click="handleToTeenMode"
@@ -88,7 +78,7 @@
       <CustomCellGroup>
         <CustomCell 
           title="新功能体验" 
-          icon="star-fill"
+          icon="star"
           :isLink="true"
           @click="handleToNewFeatures"
         />
@@ -98,13 +88,13 @@
       <CustomCellGroup>
         <CustomCell 
           title="帮助与客服" 
-          icon="question-circle-fill"
+          icon="question-circle"
           :isLink="true"
           @click="handleToHelp"
         />
         <CustomCell 
           title="关于小红书" 
-          icon="info-circle-fill"
+          icon="info-circle"
           :isLink="true"
           @click="handleToAbout"
         />
@@ -125,12 +115,6 @@
         <text class="copyright" v-if="copyright">{{ copyright }}</text>
         <text class="icp" v-if="icp">{{ icp }}</text>
       </view>
-    </scroll-view>
-    
-    <!-- 底部安全区域 -->
-<!--    &lt;!&ndash; #ifndef H5 &ndash;&gt;-->
-<!--    <view :style="{height: safeAreaBottom + 'px', background: '#f7f7f7'}"></view>-->
-<!--    &lt;!&ndash; #endif &ndash;&gt;-->
   </view>
 </template>
 
@@ -142,9 +126,6 @@ import CustomCell from '@/components/CustomCell/CustomCell.vue'
 import CustomCellGroup from '@/components/CustomCellGroup/CustomCellGroup.vue'
 
 // 状态
-const statusBarHeight = ref(0)
-const scrollHeight = ref(0)
-const safeAreaBottom = ref(0)
 const version = ref(config.appInfo?.version || 'v1.0.0')
 const storageSize = ref('2.27 GB')
 
@@ -153,26 +134,10 @@ const websiteConfig = computed(() => store.getters.websiteConfig || {})
 const copyright = computed(() => websiteConfig.value.copyright || '')
 const icp = computed(() => websiteConfig.value.icp || '')
 
-onMounted(() => {
-  // 获取系统信息
-  const systemInfo = uni.getSystemInfoSync()
-  statusBarHeight.value = systemInfo.statusBarHeight || 0
-  scrollHeight.value = systemInfo.windowHeight - statusBarHeight.value - 44
-  safeAreaBottom.value = systemInfo.safeAreaInsets?.bottom || 0
-  
-  // 计算存储空间
-  calculateStorage()
-})
-
 // 计算存储空间
 const calculateStorage = () => {
   // TODO: 实际计算存储空间
   storageSize.value = '2.27 GB'
-}
-
-// 返回
-const handleBack = () => {
-  uni.navigateBack()
 }
 
 // 账号与安全
@@ -345,57 +310,12 @@ const confirmSwitchAccount = () => {
   width: 100%;
   min-height: 100vh;
   background: #f7f7f7;
-}
-
-// 自定义导航栏
-.custom-navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 999;
-  background: #fff;
-  border-bottom: 1rpx solid #f0f0f0;
-  
-  .navbar-content {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 88rpx;
-    padding: 0 30rpx;
-    
-    .navbar-left {
-      width: 80rpx;
-      display: flex;
-      align-items: center;
-    }
-    
-    .navbar-title {
-      flex: 1;
-      text-align: center;
-      
-      text {
-        font-size: 32rpx;
-        font-weight: 600;
-        color: #333;
-      }
-    }
-    
-    .navbar-right {
-      width: 80rpx;
-    }
-  }
-}
-
-// 滚动内容
-.scroll-content {
-  width: 100%;
-  padding-top: 88rpx;
+  padding-top: 25rpx;
 }
 
 // 退出登录区域
 .logout-section {
-  padding: 40rpx 20rpx 20rpx;
+  padding: 0rpx 20rpx;
   
   .logout-btn {
     background: #fff;
@@ -437,12 +357,16 @@ const confirmSwitchAccount = () => {
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 12rpx;
   
   .copyright, .icp {
     font-size: 24rpx;
     color: #999;
     line-height: 1.6;
+    margin-bottom: 12rpx;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
   }
 }
 </style>

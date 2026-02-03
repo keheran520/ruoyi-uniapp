@@ -1,30 +1,5 @@
 <template>
   <view class="mine-page">
-    <!-- 固定顶部导航栏 -->
-    <view class="fixed-navbar" :class="{'scrolled': isScrolled}" :style="{background: navbarBg}">
-      <!-- 非H5端顶部安全区域 -->
-      <!-- #ifndef H5 -->
-      <view :style="{height: statusBarHeight + 'px'}"></view>
-      <!-- #endif -->
-      
-      <view class="navbar-content">
-        <view class="navbar-left" @click="showDrawer = true">
-          <u-icon name="list" :color="isScrolled ? '#333' : '#fff'" size="24"></u-icon>
-        </view>
-        
-        <!-- 滚动后显示的头像 -->
-        <transition name="fade">
-          <view class="navbar-avatar" v-if="isScrolled" @click="handleToInfo">
-            <image class="avatar-img" :src="userInfo?.avatar || '/static/images/profile.jpg'" mode="aspectFill"></image>
-          </view>
-        </transition>
-        
-        <view class="navbar-right" @click="handleScan">
-          <u-icon name="scan" :color="isScrolled ? '#333' : '#fff'" size="24"></u-icon>
-        </view>
-      </view>
-    </view>
-    
     <!-- 可滚动内容 -->
     <scroll-view 
       class="scroll-content" 
@@ -34,6 +9,48 @@
     >
       <!-- 头部区域 -->
       <view class="header-section">
+        <!-- 固定顶部导航栏（在头部区域内，透明覆盖） -->
+        <view class="fixed-navbar" :class="{'scrolled': isScrolled}" :style="{background: navbarBg}">
+          <!-- 非H5端顶部安全区域（小程序和App） -->
+          <!-- #ifndef H5 -->
+          <view :style="{height: statusBarHeight + 'px'}"></view>
+          <!-- #endif -->
+          
+          <view class="navbar-content" :style="{height: navbarContentHeight + 'px'}">
+            <!-- H5端和App端：左右分开布局 -->
+            <!-- #ifndef MP -->
+            <view class="navbar-left" @click="showDrawer = true">
+              <u-icon name="list" :color="isScrolled ? '#333' : '#fff'" size="24"></u-icon>
+            </view>
+            
+            <!-- 滚动后显示的头像（使用computed确保条件严格） -->
+            <view class="navbar-avatar" v-if="showNavbarAvatar" @click="handleToInfo">
+              <image class="avatar-img" :src="userInfo?.avatar || '/static/images/profile.jpg'" mode="aspectFill"></image>
+            </view>
+            
+            <view class="navbar-right" @click="handleScan">
+              <u-icon name="scan" :color="isScrolled ? '#333' : '#fff'" size="24"></u-icon>
+            </view>
+            <!-- #endif -->
+            
+            <!-- 小程序端：左侧胶囊样式 -->
+            <!-- #ifdef MP -->
+            <view class="navbar-capsule" @click="showDrawer = true">
+              <view class="capsule-icon">
+                <u-icon name="list" :color="isScrolled ? '#333' : '#fff'" size="20"></u-icon>
+              </view>
+              <view class="capsule-divider"></view>
+              <view class="capsule-icon" @click.stop="handleScan">
+                <u-icon name="scan" :color="isScrolled ? '#333' : '#fff'" size="20"></u-icon>
+              </view>
+            </view>
+            
+            <!-- 占位，保持居中 -->
+            <view class="navbar-placeholder"></view>
+            <!-- #endif -->
+          </view>
+        </view>
+        
         <image class="bg-image" :src="userBgImage || '/static/images/profile.jpg'" mode="aspectFill"></image>
         <view class="bg-mask"></view>
         
@@ -139,27 +156,32 @@
     <!-- 抽屉菜单 -->
     <view class="drawer-mask" v-if="showDrawer" @click="showDrawer = false"></view>
     <view class="drawer" :class="{'show': showDrawer}">
-      <scroll-view class="drawer-scroll" scroll-y>
+      <!-- 顶部安全区域（非H5端） -->
+      <!-- #ifndef H5 -->
+      <view :style="{height: statusBarHeight + 'px'}"></view>
+      <!-- #endif -->
+      
+      <scroll-view class="drawer-scroll" scroll-y :style="{height: drawerScrollHeight + 'px'}">
         <CustomCellGroup>
-          <CustomCell title="添加好友" icon="account-fill" :isLink="true" @click="handleDrawerItem('friend')" />
-          <CustomCell title="创作者中心" icon="edit-pen-fill" :isLink="true" @click="handleDrawerItem('creator')" />
+          <CustomCell title="添加好友" icon="account" :isLink="true" @click="handleDrawerItem('friend')" />
+          <CustomCell title="创作者中心" icon="edit-pen" :isLink="true" @click="handleDrawerItem('creator')" />
         </CustomCellGroup>
         
         <CustomCellGroup>
-          <CustomCell title="我的草稿" icon="file-text-fill" :isLink="true" @click="handleDrawerItem('draft')" />
-          <CustomCell title="浏览记录" icon="clock-fill" :isLink="true" @click="handleDrawerItem('history')" />
+          <CustomCell title="我的草稿" icon="file-text" :isLink="true" @click="handleDrawerItem('draft')" />
+          <CustomCell title="浏览记录" icon="clock" :isLink="true" @click="handleDrawerItem('history')" />
           <CustomCell title="我的下载" icon="download" :isLink="true" @click="handleDrawerItem('download')" />
         </CustomCellGroup>
         
         <CustomCellGroup>
           <CustomCell title="订单" icon="order" :isLink="true" @click="handleDrawerItem('order')" />
-          <CustomCell title="购物车" icon="shopping-cart-fill" :isLink="true" @click="handleDrawerItem('cart')" />
-          <CustomCell title="钱包" icon="wallet-fill" :isLink="true" @click="handleDrawerItem('wallet')" />
+          <CustomCell title="购物车" icon="shopping-cart" :isLink="true" @click="handleDrawerItem('cart')" />
+          <CustomCell title="钱包" icon="wallet" :isLink="true" @click="handleDrawerItem('wallet')" />
         </CustomCellGroup>
         
         <CustomCellGroup>
-          <CustomCell title="小程序" icon="grid-fill" :isLink="true" @click="handleDrawerItem('miniapp')" />
-          <CustomCell title="社区公约" icon="chat-fill" :isLink="true" @click="handleDrawerItem('community')" />
+          <CustomCell title="小程序" icon="grid" :isLink="true" @click="handleDrawerItem('miniapp')" />
+          <CustomCell title="社区公约" icon="chat" :isLink="true" @click="handleDrawerItem('community')" />
         </CustomCellGroup>
       </scroll-view>
       
@@ -174,11 +196,6 @@
         </view>
       </view>
     </view>
-    
-    <!-- 底部安全区域 -->
-    <!-- #ifndef H5 -->
-    <view :style="{height: safeAreaBottom + 'px', background: '#fff'}"></view>
-    <!-- #endif -->
   </view>
 </template>
 
@@ -206,10 +223,12 @@ const isScrolled = ref(false)
 const isTabFixed = ref(false)
 const statusBarHeight = ref(0)
 const scrollHeight = ref(0)
-const safeAreaBottom = ref(0)
 const currentTab = ref(0)
 const tabs = ['笔记', '收藏', '赞过']
-const navbarHeight = ref(88) // 导航栏内容高度
+const navbarContentHeight = ref(44) // 导航栏内容高度
+const navbarTotalHeight = ref(0) // 导航栏总高度（状态栏+内容）
+const menuButtonInfo = ref({}) // 胶囊按钮信息
+const drawerScrollHeight = ref(0) // 抽屉滚动区域高度
 
 // 导航栏背景色 - 根据滚动位置动态变化
 const navbarBg = computed(() => {
@@ -222,9 +241,15 @@ const navbarBg = computed(() => {
   return `#fff`
 })
 
+// 头像显示条件（与navbarBg保持一致）
+const showNavbarAvatar = computed(() => {
+  // 只有当背景色不是透明时才显示头像
+  return scrollTop.value >= 50
+})
+
 // Tab吸顶时的padding-top
 const tabFixedPaddingTop = computed(() => {
-  return `${statusBarHeight.value + navbarHeight.value + 20}rpx`
+  return `${navbarTotalHeight.value}px`
 })
 
 // Tab的transform动画
@@ -241,17 +266,65 @@ const balanceValue = computed(() => {
 })
 
 onMounted(() => {
+  // 确保初始状态正确
+  isScrolled.value = false
+  scrollTop.value = 0
+  isTabFixed.value = false
+  
+  // 调试日志（仅App端）
+  // #ifdef APP-PLUS
+  console.log('页面初始化:', {
+    isScrolled: isScrolled.value,
+    scrollTop: scrollTop.value,
+    showNavbarAvatar: showNavbarAvatar.value,
+    navbarBg: navbarBg.value
+  })
+  // #endif
+  
   // 获取系统信息
   const systemInfo = uni.getSystemInfoSync()
   statusBarHeight.value = systemInfo.statusBarHeight || 0
-  scrollHeight.value = systemInfo.windowHeight
-  safeAreaBottom.value = systemInfo.safeAreaInsets?.bottom || 0
-})
-
-onShow(() => {
-  if (store.state.user.token) {
-    loadData()
+  
+  // #ifdef MP
+  // 获取胶囊按钮信息（仅小程序）
+  try {
+    const menuButton = uni.getMenuButtonBoundingClientRect()
+    menuButtonInfo.value = menuButton
+    
+    // 计算导航栏内容高度（与胶囊按钮对齐）
+    navbarContentHeight.value = menuButton.height + (menuButton.top - statusBarHeight.value) * 2
+  } catch (e) {
+    console.error('获取胶囊信息失败:', e)
+    navbarContentHeight.value = 44
   }
+  // #endif
+  
+  // #ifndef MP
+  // H5和App端使用默认高度
+  navbarContentHeight.value = 44
+  // #endif
+  
+  // 计算导航栏总高度
+  // #ifndef H5
+  // 小程序和App端：状态栏 + 导航栏内容
+  navbarTotalHeight.value = statusBarHeight.value + navbarContentHeight.value
+  // #endif
+  // #ifdef H5
+  // H5端：仅导航栏内容
+  navbarTotalHeight.value = navbarContentHeight.value
+  // #endif
+  
+  // 计算滚动区域高度
+  scrollHeight.value = systemInfo.windowHeight
+  
+  // 计算抽屉滚动区域高度（总高度 - 状态栏 - 底部按钮区域）
+  const drawerFooterHeight = 100 // 底部按钮区域高度
+  // #ifndef H5
+  drawerScrollHeight.value = systemInfo.windowHeight - statusBarHeight.value - drawerFooterHeight
+  // #endif
+  // #ifdef H5
+  drawerScrollHeight.value = systemInfo.windowHeight - drawerFooterHeight
+  // #endif
 })
 
 const loadData = async () => {
@@ -278,13 +351,47 @@ const loadData = async () => {
 // 滚动监听
 const onScroll = (e) => {
   scrollTop.value = e.detail.scrollTop
-  isScrolled.value = scrollTop.value > 50
+  const wasScrolled = isScrolled.value
+  // 与navbarBg保持一致：scrollTop >= 50 时认为已滚动
+  isScrolled.value = scrollTop.value >= 50
+  
+  // 调试日志（仅App端）
+  // #ifdef APP-PLUS
+  if (wasScrolled !== isScrolled.value) {
+    console.log('滚动状态变化:', {
+      scrollTop: scrollTop.value,
+      isScrolled: isScrolled.value,
+      showNavbarAvatar: showNavbarAvatar.value,
+      navbarBg: navbarBg.value
+    })
+  }
+  // #endif
   
   // Tab吸顶判断 - 当滚动到头部区域底部时
   // 头部高度约为 600rpx，需要转换为px
   const headerHeight = 600 * (uni.getSystemInfoSync().windowWidth / 750)
   isTabFixed.value = scrollTop.value > headerHeight - 100
 }
+
+onShow(() => {
+  // 确保初始状态正确
+  isScrolled.value = false
+  scrollTop.value = 0
+  
+  // 调试日志（仅App端）
+  // #ifdef APP-PLUS
+  console.log('页面显示:', {
+    isScrolled: isScrolled.value,
+    scrollTop: scrollTop.value,
+    showNavbarAvatar: showNavbarAvatar.value,
+    navbarBg: navbarBg.value
+  })
+  // #endif
+  
+  if (store.state.user.token) {
+    loadData()
+  }
+})
 
 // 页面跳转
 const handleToInfo = () => {
@@ -374,14 +481,18 @@ const handleDrawerItem = (type) => {
   position: relative;
 }
 
-// 固定导航栏
+// 固定导航栏（在头部区域内）
 .fixed-navbar {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   right: 0;
   z-index: 999;
-  transition: background 0.3s ease; // 添加背景色过渡动画
+  transition: background 0.3s ease;
+  
+  &.scrolled {
+    position: fixed;
+  }
   
   .navbar-content {
     display: flex;
@@ -390,6 +501,7 @@ const handleDrawerItem = (type) => {
     padding: 20rpx 30rpx;
     height: 88rpx;
     
+    // H5端样式
     .navbar-left,
     .navbar-right {
       width: 60rpx;
@@ -398,7 +510,7 @@ const handleDrawerItem = (type) => {
       align-items: center;
       justify-content: center;
       border-radius: 50%;
-      background: rgba(0, 0, 0, 0.3); // 半透明黑色背景
+      background: rgba(0, 0, 0, 0.3);
       backdrop-filter: blur(10px);
       transition: all 0.2s;
       
@@ -420,6 +532,41 @@ const handleDrawerItem = (type) => {
         border: 2rpx solid #fff;
       }
     }
+    
+    // 小程序端胶囊样式
+    .navbar-capsule {
+      display: flex;
+      align-items: center;
+      height: 64rpx;
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      border-radius: 32rpx;
+      padding: 0 8rpx;
+      transition: all 0.2s;
+      
+      &:active {
+        opacity: 0.8;
+      }
+      
+      .capsule-icon {
+        width: 48rpx;
+        height: 48rpx;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .capsule-divider {
+        width: 1rpx;
+        height: 32rpx;
+        background: rgba(255, 255, 255, 0.3);
+        margin: 0 8rpx;
+      }
+    }
+    
+    .navbar-placeholder {
+      width: 60rpx;
+    }
   }
 }
 
@@ -433,7 +580,18 @@ const handleDrawerItem = (type) => {
   position: relative;
   min-height: 600rpx;
   background: linear-gradient(180deg, #2C5F5D 0%, #1F3A3D 100%);
-  padding: 140rpx 30rpx 30rpx;
+  /* #ifdef H5 */
+  padding-top: 120rpx;
+  /* #endif */
+  /* #ifdef MP */
+  padding-top: 180rpx;  // 小程序端增加padding避免与胶囊重合
+  /* #endif */
+  /* #ifdef APP-PLUS */
+  padding-top: 140rpx;  // App端
+  /* #endif */
+  padding-left: 30rpx;
+  padding-right: 30rpx;
+  padding-bottom: 30rpx;
   
   .bg-image {
     position: absolute;
@@ -497,7 +655,10 @@ const handleDrawerItem = (type) => {
         padding: 12rpx 24rpx;
         display: flex;
         align-items: center;
-        gap: 8rpx;
+        
+        .u-icon {
+          margin-right: 8rpx;
+        }
         
         text {
           font-size: 24rpx;
@@ -538,18 +699,22 @@ const handleDrawerItem = (type) => {
     position: relative;
     z-index: 2;
     display: flex;
-    gap: 40rpx;
     margin-bottom: 30rpx;
     
     .stat-item {
       display: flex;
       align-items: baseline;
-      gap: 8rpx;
+      margin-right: 40rpx;
+      
+      &:last-child {
+        margin-right: 0;
+      }
       
       .num {
         font-size: 32rpx;
         font-weight: bold;
         color: #fff;
+        margin-right: 8rpx;
       }
       
       .label {
@@ -563,7 +728,6 @@ const handleDrawerItem = (type) => {
     position: relative;
     z-index: 2;
     display: flex;
-    gap: 16rpx;
     
     .edit-btn {
       flex: 1;
@@ -574,6 +738,7 @@ const handleDrawerItem = (type) => {
       display: flex;
       align-items: center;
       justify-content: center;
+      margin-right: 16rpx;
       
       text {
         font-size: 26rpx;
@@ -604,23 +769,32 @@ const handleDrawerItem = (type) => {
   
   &.fixed {
     position: fixed;
-    top: 0;
     left: 0;
     right: 0;
     z-index: 998;
     box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.06);
     animation: slideDown 0.3s ease-out; // 添加下滑动画
+    /* #ifdef MP */
+    top: 0;
+    /* #endif */
+    /* #ifndef MP */
+    top: 0;
+    /* #endif */
   }
   
   .tabs {
     flex: 1;
     display: flex;
-    gap: 48rpx;
     
     .tab-item {
       position: relative;
       padding-bottom: 16rpx;
+      margin-right: 48rpx;
       transition: all 0.2s; // 添加Tab切换动画
+      
+      &:last-child {
+        margin-right: 0;
+      }
       
       text {
         font-size: 28rpx;
@@ -688,10 +862,11 @@ const handleDrawerItem = (type) => {
   
   .waterfall {
     display: flex;
-    gap: 12rpx;
+    margin: 0 -6rpx;
     
     .column {
       flex: 1;
+      padding: 0 6rpx;
       
       .card {
         background: #fff;
@@ -764,7 +939,6 @@ const handleDrawerItem = (type) => {
   .drawer-footer {
     display: flex;
     padding: 20rpx 40rpx 40rpx;
-    gap: 24rpx;
     background: #f7f7f7;
     border-top: 1rpx solid #e5e5e5;
     
@@ -773,11 +947,19 @@ const handleDrawerItem = (type) => {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 12rpx;
       padding: 24rpx;
       background: #fff;
       border-radius: 16rpx;
       transition: all 0.15s;
+      margin-right: 24rpx;
+      
+      &:last-child {
+        margin-right: 0;
+      }
+      
+      image, .u-icon {
+        margin-bottom: 12rpx;
+      }
       
       &:active {
         background: #f7f7f7;

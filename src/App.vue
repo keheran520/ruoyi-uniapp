@@ -31,4 +31,21 @@ export default {
 <style lang="scss">
 @import "uview-plus/index.scss";
 @import '@/static/scss/index.scss';
+
+/* TabBar 自定义样式 */
+.uni-tabbar-bottom {
+  .uni-tabbar__item {
+    .uni-tabbar__label {
+      font-weight: 600 !important;
+      font-size: 15px !important;
+    }
+  }
+  
+  .uni-tabbar__item.uni-tabbar__item--active {
+    .uni-tabbar__label {
+      font-weight: 700 !important;
+      font-size: 17px !important;
+    }
+  }
+}
 </style>

@@ -18,8 +18,22 @@
     {
       "path": "pages/index",
       "style": {
-        "navigationBarTitleText": "应用中心"
-//        "navigationStyle": "custom"
+        "navigationBarTitleText": "首页",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/detail",
+      "style": {
+        "navigationBarTitleText": "详情",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/search",
+      "style": {
+        "navigationBarTitleText": "搜索",
+        "navigationStyle": "custom"
       }
     },
     {
@@ -255,33 +269,19 @@
     }
   ],
   "tabBar": {
-    "color": "#000000",
+    "color": "#999999",
     "selectedColor": "#000000",
     "borderStyle": "white",
     "backgroundColor": "#ffffff",
+    "fontSize": "15px",
+    "height": "50px",
     "list": [
       {
         "pagePath": "pages/index",
-        "iconPath": "static/images/tabbar/home.png",
-        "selectedIconPath": "static/images/tabbar/home_.png",
-        "text": "应用中心"
+        "text": "首页"
       },
-//      {
-//        "pagePath": "pages/work",
-//        "iconPath": "static/images/tabbar/work.png",
-//        "selectedIconPath": "static/images/tabbar/work_.png",
-//        "text": "工作台"
-//      },
-      // {
-      //   "pagePath": "pages/template",
-      //   "iconPath": "static/images/tabbar/work.png",
-      //   "selectedIconPath": "static/images/tabbar/work_.png",
-      //   "text": "模板"
-      // },
       {
         "pagePath": "pages/mine",
-        "iconPath": "static/images/tabbar/mine.png",
-        "selectedIconPath": "static/images/tabbar/mine_.png",
         "text": "我的"
       }
     ]

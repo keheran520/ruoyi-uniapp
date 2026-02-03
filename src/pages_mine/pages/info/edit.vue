@@ -1,131 +1,99 @@
 <template>
   <view class="edit-profile-page">
-    <!-- 自定义导航栏 -->
-    <view class="custom-navbar">
-<!--      &lt;!&ndash; 非H5端顶部安全区域 &ndash;&gt;-->
-<!--      &lt;!&ndash; #ifndef H5 &ndash;&gt;-->
-<!--      <view :style="{height: statusBarHeight + 'px'}"></view>-->
-<!--      &lt;!&ndash; #endif &ndash;&gt;-->
-    </view>
-    
-    <!-- 内容区域 -->
-    <scroll-view class="scroll-content" scroll-y :style="{height: scrollHeight + 'px'}">
-      <!-- 头像区域 -->
-      <view class="avatar-section">
-        <view class="avatar-wrapper" @click="handleChooseAvatar">
-          <image class="avatar" :src="user.avatar || '/static/images/profile.jpg'" mode="aspectFill"></image>
-          <view class="camera-icon">
-            <u-icon name="camera-fill" color="#fff" size="20"></u-icon>
-          </view>
+    <!-- 头像区域 -->
+    <view class="avatar-section">
+      <view class="avatar-wrapper" @click="handleChooseAvatar">
+        <image class="avatar" :src="user.avatar || '/static/images/profile.jpg'" mode="aspectFill"></image>
+        <view class="camera-icon">
+          <u-icon name="camera-fill" color="#fff" size="20"></u-icon>
         </view>
       </view>
-      
-      <!-- 表单区域 -->
-      <view class="form-section">
-        <!-- 基本信息组 -->
-        <CustomCellGroup>
-          <!-- 名字 -->
-          <CustomCell 
-            title="名字" 
-            :value="user.nickName || '·'" 
+    </view>
+
+    <!-- 表单区域 -->
+    <view class="form-section">
+      <!-- 基本信息组 -->
+      <CustomCellGroup>
+        <!-- 昵称 -->
+        <CustomCell
+            title="昵称"
+            :value="user.nickName || '·'"
             :isLink="true"
-            @click="handleEditField('nickName', '名字', user.nickName)"
-          />
-          
-          <!-- 小红书号 -->
-          <CustomCell 
-            title="小红书号" 
-            :value="user.userId || '5432102799'" 
+            @click="handleEditField('nickName', '昵称', user.nickName)"
+        />
+
+        <!-- 用户ID -->
+        <CustomCell
+            title="用户ID"
+            :value="user.userId || '5432102799'"
             :isLink="true"
-            @click="handleEditField('userId', '小红书号', user.userId)"
-          />
-          
-          <!-- 背景图 -->
-          <CustomCell 
-            title="背景图" 
-            :isLink="true"
-            @click="handleChooseBg"
-          >
-            <template v-slot:value>
-              <image 
-                class="bg-preview" 
-                :src="user.bgImage || '/static/images/profile.jpg'" 
-                mode="aspectFill"
-              ></image>
-            </template>
-          </CustomCell>
-          
-          <!-- 简介 -->
-          <CustomCell 
-            title="简介" 
-            :value="user.signature || '介绍一下自己'" 
+            @click="handleEditField('userId', '用户ID', user.userId)"
+        />
+
+        <!-- 简介 -->
+        <CustomCell
+            title="简介"
+            :value="user.signature || '介绍一下自己'"
             :isLink="true"
             @click="handleEditField('signature', '简介', user.signature)"
-          />
-        </CustomCellGroup>
-        
-        <!-- 个人信息组 -->
-        <CustomCellGroup>
-          <!-- 性别 -->
-          <CustomCell 
-            title="性别" 
-            :value="getSexText(user.sex)" 
+        />
+      </CustomCellGroup>
+
+      <!-- 个人信息组 -->
+      <CustomCellGroup>
+        <!-- 性别 -->
+        <CustomCell
+            title="性别"
+            :value="getSexText(user.sex)"
             :isLink="true"
             @click="handleSelectSex"
-          />
-          
-          <!-- 生日 -->
-          <picker mode="date" :value="user.birthday" @change="handleDateChange">
-            <CustomCell 
-              title="生日" 
-              :value="user.birthday || '选择生日'" 
+        />
+
+        <!-- 生日 -->
+        <picker mode="date" :value="user.birthday" @change="handleDateChange">
+          <CustomCell
+              title="生日"
+              :value="user.birthday || '选择生日'"
               :isLink="true"
-            />
-          </picker>
-          
-          <!-- 地区 -->
-          <CustomCell 
-            title="地区" 
-            :value="user.region || '选择所在的地区'" 
+          />
+        </picker>
+
+        <!-- 地区 -->
+        <CustomCell
+            title="地区"
+            :value="user.region || '选择所在的地区'"
             :isLink="true"
             @click="handleSelectRegion"
-          />
-          
-          <!-- 职业 -->
-          <CustomCell 
-            title="职业" 
-            :value="user.occupation || '选择职业'" 
+        />
+
+        <!-- 职业 -->
+        <CustomCell
+            title="职业"
+            :value="user.occupation || '选择职业'"
             :isLink="true"
             @click="handleSelectOccupation"
-          />
-          
-          <!-- 学校 -->
-          <CustomCell 
-            title="学校" 
-            :value="user.school || '选择学校'" 
+        />
+
+        <!-- 学校 -->
+        <CustomCell
+            title="学校"
+            :value="user.school || '选择学校'"
             :isLink="true"
             @click="handleSelectSchool"
-          />
-        </CustomCellGroup>
-        
-        <!-- 认证信息组 -->
-        <CustomCellGroup>
-          <!-- 原创信息 -->
-          <CustomCell 
-            title="原创信息" 
-            :value="user.originalVerified ? '已完成原创认证' : '暂未完成原创认证'" 
+        />
+      </CustomCellGroup>
+
+      <!-- 认证信息组 -->
+      <CustomCellGroup>
+        <!-- 官方认证 -->
+        <CustomCell
+            title="官方认证"
+            :value="user.originalVerified ? '已完成官方认证' : '暂未完成官方认证'"
             :isLink="true"
-            @click="handleOriginalVerify"
-          />
-        </CustomCellGroup>
-      </view>
-    </scroll-view>
-    
-    <!-- 底部安全区域 -->
-<!--    &lt;!&ndash; #ifndef H5 &ndash;&gt;-->
-<!--    <view :style="{height: safeAreaBottom + 'px', background: '#f7f7f7'}"></view>-->
-<!--    &lt;!&ndash; #endif &ndash;&gt;-->
-    
+            @click="handleOfficialVerify"
+        />
+      </CustomCellGroup>
+    </view>
     <!-- 编辑弹窗 -->
     <u-popup v-model="showEditPopup" mode="bottom" :border-radius="20">
       <view class="edit-popup">
@@ -136,19 +104,19 @@
           </view>
         </view>
         <view class="popup-content">
-          <textarea 
-            v-if="editField === 'signature'"
-            class="edit-textarea" 
-            v-model="editValue" 
-            :placeholder="'请输入' + editTitle"
-            :maxlength="100"
-            auto-height
+          <textarea
+              v-if="editField === 'signature'"
+              class="edit-textarea"
+              v-model="editValue"
+              :placeholder="'请输入' + editTitle"
+              :maxlength="100"
+              auto-height
           ></textarea>
-          <input 
-            v-else
-            class="edit-input" 
-            v-model="editValue" 
-            :placeholder="'请输入' + editTitle"
+          <input
+              v-else
+              class="edit-input"
+              v-model="editValue"
+              :placeholder="'请输入' + editTitle"
           />
         </view>
         <view class="popup-footer">
@@ -156,20 +124,20 @@
         </view>
       </view>
     </u-popup>
-    
+
     <!-- 性别选择 -->
-    <u-action-sheet 
-      v-model="showSexSheet" 
-      :list="sexList"
-      @click="handleSexSelect"
+    <u-action-sheet
+        v-model="showSexSheet"
+        :list="sexList"
+        @click="handleSexSelect"
     ></u-action-sheet>
   </view>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
-import { getUserProfile, updateUserProfile } from '@/api/system/user'
+import {ref, computed, onMounted} from 'vue'
+import {onLoad} from '@dcloudio/uni-app'
+import {getUserProfile, updateUserProfile} from '@/api/system/user'
 import CustomCell from '@/components/CustomCell/CustomCell.vue'
 import CustomCellGroup from '@/components/CustomCellGroup/CustomCellGroup.vue'
 
@@ -201,8 +169,8 @@ const editValue = ref('')
 // 性别选择
 const showSexSheet = ref(false)
 const sexList = ref([
-  { text: '男' },
-  { text: '女' }
+  {text: '男'},
+  {text: '女'}
 ])
 
 // 日期选择
@@ -252,7 +220,7 @@ const handleBack = () => {
 
 // 预览
 const handlePreview = () => {
-  uni.showToast({ title: '预览功能开发中', icon: 'none' })
+  uni.showToast({title: '预览功能开发中', icon: 'none'})
 }
 
 // 选择头像
@@ -268,18 +236,7 @@ const handleChooseAvatar = () => {
   })
 }
 
-// 选择背景图
-const handleChooseBg = () => {
-  uni.chooseImage({
-    count: 1,
-    sizeType: ['compressed'],
-    sourceType: ['album', 'camera'],
-    success: (res) => {
-      user.value.bgImage = res.tempFilePaths[0]
-      saveUserData()
-    }
-  })
-}
+// 选择背景图 - 已移除此功能
 
 // 编辑字段
 const handleEditField = (field, title, value) => {
@@ -310,32 +267,32 @@ const handleSexSelect = (index) => {
 
 // 选择地区
 const handleSelectRegion = () => {
-  uni.showToast({ title: '地区选择功能开发中', icon: 'none' })
+  uni.showToast({title: '地区选择功能开发中', icon: 'none'})
 }
 
 // 选择职业
 const handleSelectOccupation = () => {
-  uni.showToast({ title: '职业选择功能开发中', icon: 'none' })
+  uni.showToast({title: '职业选择功能开发中', icon: 'none'})
 }
 
 // 选择学校
 const handleSelectSchool = () => {
-  uni.showToast({ title: '学校选择功能开发中', icon: 'none' })
+  uni.showToast({title: '学校选择功能开发中', icon: 'none'})
 }
 
-// 原创认证
-const handleOriginalVerify = () => {
-  uni.showToast({ title: '原创认证功能开发中', icon: 'none' })
+// 官方认证
+const handleOfficialVerify = () => {
+  uni.showToast({title: '官方认证功能开发中', icon: 'none'})
 }
 
 // 保存用户数据
 const saveUserData = async () => {
   try {
     await updateUserProfile(user.value)
-    uni.showToast({ title: '保存成功', icon: 'success' })
+    uni.showToast({title: '保存成功', icon: 'success'})
   } catch (e) {
     console.error('保存失败', e)
-    uni.showToast({ title: '保存失败', icon: 'none' })
+    uni.showToast({title: '保存失败', icon: 'none'})
   }
 }
 </script>
@@ -347,80 +304,25 @@ const saveUserData = async () => {
   background: #f7f7f7;
 }
 
-// 自定义导航栏
-.custom-navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 999;
-  background: #fff;
-  border-bottom: 1rpx solid #f0f0f0;
-  
-  .navbar-content {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 88rpx;
-    padding: 0 30rpx;
-    
-    .navbar-left {
-      width: 80rpx;
-      display: flex;
-      align-items: center;
-    }
-    
-    .navbar-title {
-      flex: 1;
-      text-align: center;
-      
-      text {
-        font-size: 32rpx;
-        font-weight: 600;
-        color: #333;
-      }
-    }
-    
-    .navbar-right {
-      width: 80rpx;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      
-      text {
-        font-size: 28rpx;
-        color: #333;
-      }
-    }
-  }
-}
-
-// 滚动内容
-.scroll-content {
-  width: 100%;
-  padding-top: 88rpx;
-}
-
 // 头像区域
 .avatar-section {
-  background: #fff;
   padding: 60rpx 0;
   display: flex;
   justify-content: center;
   align-items: center;
   margin-bottom: 20rpx;
-  
+
   .avatar-wrapper {
     position: relative;
     width: 160rpx;
     height: 160rpx;
-    
+
     .avatar {
       width: 100%;
       height: 100%;
       border-radius: 50%;
     }
-    
+
     .camera-icon {
       position: absolute;
       bottom: 0;
@@ -440,32 +342,26 @@ const saveUserData = async () => {
 // 表单区域
 .form-section {
   padding-bottom: 40rpx;
-  
-  .bg-preview {
-    width: 80rpx;
-    height: 60rpx;
-    border-radius: 8rpx;
-  }
 }
 
 // 编辑弹窗
 .edit-popup {
   background: #fff;
   border-radius: 20rpx 20rpx 0 0;
-  
+
   .popup-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 30rpx 40rpx;
     border-bottom: 1rpx solid #f0f0f0;
-    
+
     .popup-title {
       font-size: 32rpx;
       font-weight: 600;
       color: #333;
     }
-    
+
     .popup-close {
       width: 56rpx;
       height: 56rpx;
@@ -474,10 +370,10 @@ const saveUserData = async () => {
       justify-content: center;
     }
   }
-  
+
   .popup-content {
     padding: 40rpx;
-    
+
     .edit-input {
       width: 100%;
       height: 80rpx;
@@ -487,7 +383,7 @@ const saveUserData = async () => {
       font-size: 28rpx;
       color: #333;
     }
-    
+
     .edit-textarea {
       width: 100%;
       min-height: 200rpx;
@@ -499,10 +395,10 @@ const saveUserData = async () => {
       line-height: 1.6;
     }
   }
-  
+
   .popup-footer {
     padding: 20rpx 40rpx 40rpx;
-    
+
     .save-btn {
       width: 100%;
       height: 88rpx;
@@ -512,7 +408,7 @@ const saveUserData = async () => {
       color: #fff;
       font-weight: 600;
       border: none;
-      
+
       &::after {
         border: none;
       }
