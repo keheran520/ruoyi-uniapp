@@ -94,12 +94,6 @@
           }
         },
         {
-          "path": "info/index",
-          "style": {
-            "navigationBarTitleText": "个人信息"
-          }
-        },
-        {
           "path": "info/edit",
           "style": {
             "navigationBarTitleText": "编辑资料"
@@ -115,6 +109,18 @@
           "path": "setting/index",
           "style": {
             "navigationBarTitleText": "应用设置"
+          }
+        },
+        {
+          "path": "security/index",
+          "style": {
+            "navigationBarTitleText": "账号与安全"
+          }
+        },
+        {
+          "path": "security/devices",
+          "style": {
+            "navigationBarTitleText": "登录设备"
           }
         },
         {

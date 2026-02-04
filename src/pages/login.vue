@@ -618,6 +618,15 @@ async function doLogin() {
 
 function loginSuccess(result) {
   store.dispatch('GetInfo').then(res => {
+    // 登录成功后获取用户资料
+    return store.dispatch('GetUserProfile')
+  }).then(() => {
+    uni.switchTab({
+      url: '/pages/index'
+    });
+  }).catch(error => {
+    console.error('获取用户信息失败:', error)
+    // 即使获取用户资料失败，也允许进入首页
     uni.switchTab({
       url: '/pages/index'
     });

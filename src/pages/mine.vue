@@ -5,8 +5,9 @@
       class="scroll-content" 
       scroll-y 
       @scroll="onScroll"
-      :style="{height: scrollHeight + 'px'}"
     >
+<!--      :style="{height: scrollHeight + 'px'}"-->
+
       <!-- 头部区域 -->
       <view class="header-section">
         <!-- 固定顶部导航栏（在头部区域内，透明覆盖） -->
@@ -57,12 +58,12 @@
         <!-- 用户信息 -->
         <view class="user-info">
           <view class="avatar-row">
-            <view class="avatar-box" @click="handleToInfo">
-              <image class="avatar" :src="userInfo?.avatar || '/static/images/profile.jpg'" mode="aspectFill"></image>
-              <view class="edit-icon">
-                <u-icon name="plus" color="#333" size="14"></u-icon>
-              </view>
-            </view>
+            <AvatarUpload 
+              v-model="userInfo.avatar" 
+              :enableCrop="false"
+              @success="handleAvatarSuccess"
+              @error="handleAvatarError"
+            />
             
             <!-- 签到按钮（与头像同一行） -->
             <view class="checkin-btn" @click="handleCheckin" :class="{'signed': isSigned}">
@@ -71,12 +72,12 @@
             </view>
           </view>
           
-          <view class="nickname">{{ userInfo?.nickname || userInfo?.userName || 'xxxxxxxxx' }}</view>
-          <view class="user-id">
+          <view class="nickname" @tap="handleToEditInfo">{{ userInfo?.nickName || userInfo?.userName || 'xxxxxxxxx' }}</view>
+          <view class="user-id" @tap="handleCopyUserId">
             <text>用户ID: {{ userInfo?.userId || 'xxxxxxxxx' }}</text>
           </view>
-          <view class="bio" @click="handleEditSignature">
-            <text>{{ userSignature || '点击这里,填写简介' }}</text>
+          <view class="bio" @tap="handleToEditInfo">
+            <text>{{ userInfo?.signature || '点击这里,填写简介' }}</text>
           </view>
         </view>
         
@@ -115,7 +116,7 @@
             v-for="(tab, index) in tabs" 
             :key="index"
             :class="{'active': currentTab === index}"
-            @click="currentTab = index"
+            @click="handleTabChange(index)"
           >
             <text>{{ tab }}</text>
             <view class="line" v-if="currentTab === index"></view>
@@ -128,27 +129,242 @@
       
       <!-- 内容区域 -->
       <view class="content-area">
-        <view class="waterfall" v-for="item in 10">
-          <view class="column">
-            <view class="card" @click="handleToBalance">
-              <image class="cover" src="/static/images/profile.jpg" mode="aspectFill"></image>
-              <view class="info">
-                <text class="title">我的余额: ¥{{ balanceValue }}</text>
+        <!-- Tab 0: 图片 -->
+        <view v-if="currentTab === 0" class="tab-content">
+          <!-- 加载中状态 -->
+          <view v-if="myImagesPage.loading && myImages.length === 0" class="loading-state">
+            <view class="loading-spinner"></view>
+            <text class="loading-text">加载中...</text>
+          </view>
+          <view v-else-if="myImages.length === 0 && !myImagesPage.loading" class="empty-state">
+            <text class="empty-icon">📷</text>
+            <text class="empty-text">还没有上传图片</text>
+          </view>
+          <view v-else class="waterfall-container">
+            <view class="waterfall-column">
+              <view 
+                v-for="(item, index) in leftImages" 
+                :key="item.imageId"
+                class="waterfall-item"
+                @click="handleToImageDetail(item.imageId)"
+              >
+                <image 
+                  class="item-image" 
+                  :src="item.url" 
+                  mode="widthFix"
+                  :lazy-load="true"
+                ></image>
+                <view class="item-info">
+                  <text class="item-title">{{ item.imageName }}</text>
+                  <view class="item-meta">
+                    <view class="like-info">
+                      <u-icon name="heart" size="14" color="#999"></u-icon>
+                      <text>{{ item.likeCount || 0 }}</text>
+                    </view>
+                  </view>
+                </view>
+              </view>
+            </view>
+            <view class="waterfall-column">
+              <view 
+                v-for="(item, index) in rightImages" 
+                :key="item.imageId"
+                class="waterfall-item"
+                @click="handleToImageDetail(item.imageId)"
+              >
+                <image 
+                  class="item-image" 
+                  :src="item.url" 
+                  mode="widthFix"
+                  :lazy-load="true"
+                ></image>
+                <view class="item-info">
+                  <text class="item-title">{{ item.imageName }}</text>
+                  <view class="item-meta">
+                    <view class="like-info">
+                      <u-icon name="heart" size="14" color="#999"></u-icon>
+                      <text>{{ item.likeCount || 0 }}</text>
+                    </view>
+                  </view>
+                </view>
               </view>
             </view>
           </view>
-          <view class="column">
-            <view class="card" @click="handleToPoints">
-              <image class="cover" src="/static/images/profile.jpg" mode="aspectFill"></image>
-              <view class="info">
-                <text class="title">我的积分: {{ memberInfo.points || 0 }}</text>
+          <view class="load-tip" v-if="myImages.length > 0">
+            <text v-if="myImagesPage.loading">加载中...</text>
+            <text v-else-if="!myImagesPage.hasMore">没有更多了</text>
+          </view>
+        </view>
+        
+        <!-- Tab 1: 相册 -->
+        <view v-if="currentTab === 1" class="tab-content">
+          <!-- 加载中状态 -->
+          <view v-if="myAlbumsPage.loading && myAlbums.length === 0" class="loading-state">
+            <view class="loading-spinner"></view>
+            <text class="loading-text">加载中...</text>
+          </view>
+          <view v-else-if="myAlbums.length === 0 && !myAlbumsPage.loading" class="empty-state">
+            <text class="empty-icon">📁</text>
+            <text class="empty-text">还没有创建相册</text>
+          </view>
+          <view v-else class="album-grid">
+            <view 
+              v-for="item in myAlbums" 
+              :key="item.albumId"
+              class="album-card"
+              @click="handleToAlbumDetail(item.albumId)"
+            >
+              <image class="album-cover" :src="item.coverUrl || '/static/images/default-album.jpg'" mode="aspectFill"></image>
+              <view class="album-info">
+                <text class="album-title">{{ item.albumName }}</text>
+                <text class="album-count">{{ item.imageCount || 0 }}张</text>
               </view>
             </view>
+          </view>
+          <view class="load-tip" v-if="myAlbums.length > 0">
+            <text v-if="myAlbumsPage.loading">加载中...</text>
+            <text v-else-if="!myAlbumsPage.hasMore">没有更多了</text>
+          </view>
+        </view>
+        
+        <!-- Tab 2: 点赞过 -->
+        <view v-if="currentTab === 2" class="tab-content">
+          <!-- 加载中状态 -->
+          <view v-if="likedImagesPage.loading && likedImages.length === 0" class="loading-state">
+            <view class="loading-spinner"></view>
+            <text class="loading-text">加载中...</text>
+          </view>
+          <view v-else-if="likedImages.length === 0 && !likedImagesPage.loading" class="empty-state">
+            <text class="empty-icon">❤️</text>
+            <text class="empty-text">还没有点赞过内容</text>
+          </view>
+          <view v-else class="waterfall-container">
+            <view class="waterfall-column">
+              <view 
+                v-for="(item, index) in leftLikedImages" 
+                :key="item.imageId"
+                class="waterfall-item"
+                @click="() => handleToImageDetail(item.imageId)"
+              >
+                <image 
+                  class="item-image" 
+                  :src="item.url" 
+                  mode="widthFix"
+                  :lazy-load="true"
+                ></image>
+                <view class="item-info">
+                  <text class="item-title">{{ item.imageName }}</text>
+                  <view class="item-meta">
+                    <view class="like-info">
+                      <u-icon name="heart-fill" size="14" color="#ff2442"></u-icon>
+                      <text>{{ item.likeCount || 0 }}</text>
+                    </view>
+                  </view>
+                </view>
+              </view>
+            </view>
+            <view class="waterfall-column">
+              <view 
+                v-for="(item, index) in rightLikedImages" 
+                :key="item.imageId"
+                class="waterfall-item"
+                @click="() => handleToImageDetail(item.imageId)"
+              >
+                <image 
+                  class="item-image" 
+                  :src="item.url" 
+                  mode="widthFix"
+                  :lazy-load="true"
+                ></image>
+                <view class="item-info">
+                  <text class="item-title">{{ item.imageName }}</text>
+                  <view class="item-meta">
+                    <view class="like-info">
+                      <u-icon name="heart-fill" size="14" color="#ff2442"></u-icon>
+                      <text>{{ item.likeCount || 0 }}</text>
+                    </view>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </view>
+          <view class="load-tip" v-if="likedImages.length > 0">
+            <text v-if="likedImagesPage.loading">加载中...</text>
+            <text v-else-if="!likedImagesPage.hasMore">没有更多了</text>
+          </view>
+        </view>
+        
+        <!-- Tab 3: 收藏过 -->
+        <view v-if="currentTab === 3" class="tab-content">
+          <!-- 加载中状态 -->
+          <view v-if="favoritedImagesPage.loading && favoritedImages.length === 0" class="loading-state">
+            <view class="loading-spinner"></view>
+            <text class="loading-text">加载中...</text>
+          </view>
+          <view v-else-if="favoritedImages.length === 0 && !favoritedImagesPage.loading" class="empty-state">
+            <text class="empty-icon">⭐</text>
+            <text class="empty-text">还没有收藏过内容</text>
+          </view>
+          <view v-else class="waterfall-container">
+            <view class="waterfall-column">
+              <view 
+                v-for="(item, index) in leftLikedImages" 
+                :key="item.imageId"
+                class="waterfall-item"
+                @click="() => handleToImageDetail(item.imageId)"
+              >
+                <image 
+                  class="item-image" 
+                  :src="item.url" 
+                  mode="widthFix"
+                  :lazy-load="true"
+                ></image>
+                <view class="item-info">
+                  <text class="item-title">{{ item.imageName }}</text>
+                  <view class="item-meta">
+                    <view class="like-info">
+                      <u-icon name="heart-fill" size="14" color="#ff2442"></u-icon>
+                      <text>{{ item.likeCount || 0 }}</text>
+                    </view>
+                  </view>
+                </view>
+              </view>
+            </view>
+            <view class="waterfall-column">
+              <view 
+                v-for="(item, index) in rightLikedImages" 
+                :key="item.imageId"
+                class="waterfall-item"
+                @click="() => handleToImageDetail(item.imageId)"
+              >
+                <image 
+                  class="item-image" 
+                  :src="item.url" 
+                  mode="widthFix"
+                  :lazy-load="true"
+                ></image>
+                <view class="item-info">
+                  <text class="item-title">{{ item.imageName }}</text>
+                  <view class="item-meta">
+                    <view class="like-info">
+                      <u-icon name="heart-fill" size="14" color="#ff2442"></u-icon>
+                      <text>{{ item.likeCount || 0 }}</text>
+                    </view>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </view>
+          <view class="load-tip" v-if="likedImages.length > 0">
+            <text v-if="likedImagesPage.loading">加载中...</text>
+            <text v-else-if="!likedImagesPage.hasMore">没有更多了</text>
           </view>
         </view>
         
         <view class="footer-tip">
-          <text>没有更多了</text>
+          <text v-if="currentTab === 0 && myImages.length === 0 && !myImagesPage.loading">上传图片开始创作吧</text>
+          <text v-else-if="currentTab === 2 && likedImages.length === 0 && !likedImagesPage.loading">去发现喜欢的内容吧</text>
+          <text v-else-if="currentTab === 3 && favoritedImages.length === 0 && !favoritedImagesPage.loading">去收藏喜欢的内容吧</text>
         </view>
       </view>
     </scroll-view>
@@ -201,14 +417,16 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onShow, onReachBottom, onPullDownRefresh } from '@dcloudio/uni-app'
 import store from '@/store'
 import { getMemberInfo, getCheckinStatus } from '@/api/mobile/member'
+import { getMyImages, getMyAlbums, getLikedImages, getFavoritedImages } from '@/api/mobile/interaction'
 import CustomCell from '@/components/CustomCell/CustomCell.vue'
 import CustomCellGroup from '@/components/CustomCellGroup/CustomCellGroup.vue'
+import AvatarUpload from '@/components/AvatarUpload/AvatarUpload.vue'
 
 // 状态
-const userInfo = computed(() => store.getters.info || {})
+const userInfo = computed(() => store.state.user.userProfile || {})
 const memberInfo = ref({})
 const isSigned = ref(false)
 const showDrawer = ref(false)
@@ -224,11 +442,32 @@ const isTabFixed = ref(false)
 const statusBarHeight = ref(0)
 const scrollHeight = ref(0)
 const currentTab = ref(0)
-const tabs = ['笔记', '收藏', '赞过']
+const tabs = ['图片', '相册', '点赞过', '收藏过']
 const navbarContentHeight = ref(44) // 导航栏内容高度
+const loadingRequestId = ref(0) // 请求ID，用于防止数据混乱
 const navbarTotalHeight = ref(0) // 导航栏总高度（状态栏+内容）
 const menuButtonInfo = ref({}) // 胶囊按钮信息
 const drawerScrollHeight = ref(0) // 抽屉滚动区域高度
+
+// 内容数据
+const myImages = ref([]) // 我的图片
+const myAlbums = ref([]) // 我的相册
+const likedImages = ref([]) // 点赞过的图片
+const favoritedImages = ref([]) // 收藏过的图片
+
+// 分页参数
+const myImagesPage = ref({ pageNum: 1, pageSize: 20, hasMore: true, loading: false, loaded: false })
+const myAlbumsPage = ref({ pageNum: 1, pageSize: 20, hasMore: true, loading: false, loaded: false })
+const likedImagesPage = ref({ pageNum: 1, pageSize: 20, hasMore: true, loading: false, loaded: false })
+const favoritedImagesPage = ref({ pageNum: 1, pageSize: 20, hasMore: true, loading: false, loaded: false })
+
+// 瀑布流左右列数据
+const leftImages = computed(() => myImages.value.filter((_, index) => index % 2 === 0))
+const rightImages = computed(() => myImages.value.filter((_, index) => index % 2 === 1))
+const leftLikedImages = computed(() => likedImages.value.filter((_, index) => index % 2 === 0))
+const rightLikedImages = computed(() => likedImages.value.filter((_, index) => index % 2 === 1))
+const leftFavoritedImages = computed(() => favoritedImages.value.filter((_, index) => index % 2 === 0))
+const rightFavoritedImages = computed(() => favoritedImages.value.filter((_, index) => index % 2 === 1))
 
 // 导航栏背景色 - 根据滚动位置动态变化
 const navbarBg = computed(() => {
@@ -390,6 +629,48 @@ onShow(() => {
   
   if (store.state.user.token) {
     loadData()
+    // 只加载默认Tab（图片）的数据
+    loadCurrentTabData()
+  }
+})
+
+// 下拉刷新
+onPullDownRefresh(() => {
+  // 根据当前Tab刷新对应的数据
+  switch (currentTab.value) {
+    case 0:
+      loadMyImages(true).then(() => uni.stopPullDownRefresh())
+      break
+    case 1:
+      loadMyAlbums(true).then(() => uni.stopPullDownRefresh())
+      break
+    case 2:
+      loadLikedImages(true).then(() => uni.stopPullDownRefresh())
+      break
+    case 3:
+      loadFavoritedImages(true).then(() => uni.stopPullDownRefresh())
+      break
+    default:
+      uni.stopPullDownRefresh()
+  }
+})
+
+// 上拉加载更多
+onReachBottom(() => {
+  // 根据当前Tab加载更多数据
+  switch (currentTab.value) {
+    case 0:
+      loadMyImages(false)
+      break
+    case 1:
+      loadMyAlbums(false)
+      break
+    case 2:
+      loadLikedImages(false)
+      break
+    case 3:
+      loadFavoritedImages(false)
+      break
   }
 })
 
@@ -399,11 +680,51 @@ const handleToInfo = () => {
     uni.navigateTo({ url: '/pages/login' })
     return
   }
-  uni.navigateTo({ url: '/pages_mine/pages/info/index' })
+  // 跳转到编辑资料页面
+  handleToEditInfo()
 }
 
 const handleToEditInfo = () => {
   uni.navigateTo({ url: '/pages_mine/pages/info/edit' })
+}
+
+// 复制用户ID
+const handleCopyUserId = () => {
+  const userId = userInfo.value?.userId
+  if (!userId) {
+    uni.showToast({ title: '用户ID不存在', icon: 'none' })
+    return
+  }
+  
+  // 复制到剪贴板
+  uni.setClipboardData({
+    data: String(userId),
+    success: () => {
+      uni.showToast({ title: '复制成功', icon: 'success' })
+    },
+    fail: () => {
+      uni.showToast({ title: '复制失败', icon: 'none' })
+    }
+  })
+}
+
+// 头像上传成功
+const handleAvatarSuccess = (data) => {
+  console.log('头像上传成功', data)
+  
+  // 更新store中的用户资料
+  store.dispatch('UpdateUserProfileField', { 
+    field: 'avatar', 
+    value: data.imgUrl 
+  })
+  
+  // 刷新用户信息
+  loadUserInfo()
+}
+
+// 头像上传失败
+const handleAvatarError = (error) => {
+  console.error('头像上传失败', error)
 }
 
 const handleToSetting = () => {
@@ -431,6 +752,261 @@ const handleToLikes = () => {
   uni.showToast({ title: '功能开发中', icon: 'none' })
 }
 
+// 跳转到图片详情
+const handleToImageDetail = (imageId) => {
+  uni.navigateTo({ url: `/pages/detail?imageId=${imageId}` })
+}
+
+// 跳转到相册详情
+const handleToAlbumDetail = (albumId) => {
+  uni.showToast({ title: '相册详情功能开发中', icon: 'none' })
+  // TODO: 后续实现相册详情页
+  // uni.navigateTo({ url: `/pages/album-detail?id=${albumId}` })
+}
+
+// 加载我的图片
+const loadMyImages = async (refresh = false) => {
+  if (myImagesPage.value.loading) return
+  if (!refresh && !myImagesPage.value.hasMore) return
+  
+  // 生成新的请求ID
+  const requestId = ++loadingRequestId.value
+  const targetTab = 0
+  
+  try {
+    myImagesPage.value.loading = true
+    
+    // 如果是刷新，重置分页
+    if (refresh) {
+      myImagesPage.value.pageNum = 1
+      myImagesPage.value.hasMore = true
+    }
+    
+    const res = await getMyImages({
+      pageNum: myImagesPage.value.pageNum,
+      pageSize: myImagesPage.value.pageSize
+    })
+    
+    // 验证：只有当前Tab仍然是目标Tab，且请求ID匹配时才更新数据
+    if (currentTab.value !== targetTab || requestId !== loadingRequestId.value) {
+      console.log('请求已过期，忽略结果')
+      return
+    }
+    
+    if (res.code === 200 && res.rows) {
+      const newImages = res.rows.map(item => ({
+        imageId: item.imageId,
+        imageName: item.imageName || '未命名',
+        url: item.url || '/static/images/default-image.jpg',
+        likeCount: item.likeCount || 0,
+        favoriteCount: item.favoriteCount || 0,
+        commentCount: item.commentCount || 0
+      }))
+      
+      if (refresh) {
+        myImages.value = newImages
+      } else {
+        myImages.value = [...myImages.value, ...newImages]
+      }
+      
+      // 判断是否还有更多数据
+      myImagesPage.value.hasMore = newImages.length >= myImagesPage.value.pageSize
+      myImagesPage.value.pageNum++
+      myImagesPage.value.loaded = true
+    }
+  } catch (error) {
+    console.error('加载我的图片失败：', error)
+    uni.showToast({ title: '加载失败', icon: 'none' })
+  } finally {
+    // 只有请求ID匹配时才关闭loading
+    if (requestId === loadingRequestId.value) {
+      myImagesPage.value.loading = false
+    }
+  }
+}
+
+// 加载我的相册
+const loadMyAlbums = async (refresh = false) => {
+  if (myAlbumsPage.value.loading) return
+  if (!refresh && !myAlbumsPage.value.hasMore) return
+  
+  // 生成新的请求ID
+  const requestId = ++loadingRequestId.value
+  const targetTab = 1
+  
+  try {
+    myAlbumsPage.value.loading = true
+    
+    // 如果是刷新，重置分页
+    if (refresh) {
+      myAlbumsPage.value.pageNum = 1
+      myAlbumsPage.value.hasMore = true
+    }
+    
+    const res = await getMyAlbums({
+      pageNum: myAlbumsPage.value.pageNum,
+      pageSize: myAlbumsPage.value.pageSize
+    })
+    
+    // 验证：只有当前Tab仍然是目标Tab，且请求ID匹配时才更新数据
+    if (currentTab.value !== targetTab || requestId !== loadingRequestId.value) {
+      console.log('请求已过期，忽略结果')
+      return
+    }
+    
+    if (res.code === 200 && res.rows) {
+      const newAlbums = res.rows.map(item => ({
+        albumId: item.albumId,
+        albumName: item.albumName || '未命名相册',
+        coverUrl: item.albumCover || '/static/images/default-album.jpg',
+        imageCount: item.imageCount || 0,
+        description: item.description || ''
+      }))
+      
+      if (refresh) {
+        myAlbums.value = newAlbums
+      } else {
+        myAlbums.value = [...myAlbums.value, ...newAlbums]
+      }
+      
+      // 判断是否还有更多数据
+      myAlbumsPage.value.hasMore = newAlbums.length >= myAlbumsPage.value.pageSize
+      myAlbumsPage.value.pageNum++
+      myAlbumsPage.value.loaded = true
+    }
+  } catch (error) {
+    console.error('加载我的相册失败：', error)
+    uni.showToast({ title: '加载失败', icon: 'none' })
+  } finally {
+    // 只有请求ID匹配时才关闭loading
+    if (requestId === loadingRequestId.value) {
+      myAlbumsPage.value.loading = false
+    }
+  }
+}
+
+// 加载点赞过的图片
+const loadLikedImages = async (refresh = false) => {
+  if (likedImagesPage.value.loading) return
+  if (!refresh && !likedImagesPage.value.hasMore) return
+  
+  // 生成新的请求ID
+  const requestId = ++loadingRequestId.value
+  const targetTab = 2
+  
+  try {
+    likedImagesPage.value.loading = true
+    
+    // 如果是刷新，重置分页
+    if (refresh) {
+      likedImagesPage.value.pageNum = 1
+      likedImagesPage.value.hasMore = true
+    }
+    
+    const res = await getLikedImages({
+      pageNum: likedImagesPage.value.pageNum,
+      pageSize: likedImagesPage.value.pageSize
+    })
+    
+    // 验证：只有当前Tab仍然是目标Tab，且请求ID匹配时才更新数据
+    if (currentTab.value !== targetTab || requestId !== loadingRequestId.value) {
+      console.log('请求已过期，忽略结果')
+      return
+    }
+    
+    if (res.code === 200 && res.rows) {
+      const newImages = res.rows.map(item => ({
+        imageId: item.imageId,
+        imageName: item.imageName || '未命名',
+        url: item.url || '/static/images/default-image.jpg',
+        likeCount: item.likeCount || 0,
+        favoriteCount: item.favoriteCount || 0,
+        commentCount: item.commentCount || 0
+      }))
+      
+      if (refresh) {
+        likedImages.value = newImages
+      } else {
+        likedImages.value = [...likedImages.value, ...newImages]
+      }
+      
+      // 判断是否还有更多数据
+      likedImagesPage.value.hasMore = newImages.length >= likedImagesPage.value.pageSize
+      likedImagesPage.value.pageNum++
+      likedImagesPage.value.loaded = true
+    }
+  } catch (error) {
+    console.error('加载点赞图片失败：', error)
+    uni.showToast({ title: '加载失败', icon: 'none' })
+  } finally {
+    // 只有请求ID匹配时才关闭loading
+    if (requestId === loadingRequestId.value) {
+      likedImagesPage.value.loading = false
+    }
+  }
+}
+
+// 加载收藏过的图片
+const loadFavoritedImages = async (refresh = false) => {
+  if (favoritedImagesPage.value.loading) return
+  if (!refresh && !favoritedImagesPage.value.hasMore) return
+  
+  // 生成新的请求ID
+  const requestId = ++loadingRequestId.value
+  const targetTab = 3
+  
+  try {
+    favoritedImagesPage.value.loading = true
+    
+    // 如果是刷新，重置分页
+    if (refresh) {
+      favoritedImagesPage.value.pageNum = 1
+      favoritedImagesPage.value.hasMore = true
+    }
+    
+    const res = await getFavoritedImages({
+      pageNum: favoritedImagesPage.value.pageNum,
+      pageSize: favoritedImagesPage.value.pageSize
+    })
+    
+    // 验证：只有当前Tab仍然是目标Tab，且请求ID匹配时才更新数据
+    if (currentTab.value !== targetTab || requestId !== loadingRequestId.value) {
+      console.log('请求已过期，忽略结果')
+      return
+    }
+    
+    if (res.code === 200 && res.rows) {
+      const newImages = res.rows.map(item => ({
+        imageId: item.imageId,
+        imageName: item.imageName || '未命名',
+        url: item.url || '/static/images/default-image.jpg',
+        likeCount: item.likeCount || 0,
+        favoriteCount: item.favoriteCount || 0,
+        commentCount: item.commentCount || 0
+      }))
+      
+      if (refresh) {
+        favoritedImages.value = newImages
+      } else {
+        favoritedImages.value = [...favoritedImages.value, ...newImages]
+      }
+      
+      // 判断是否还有更多数据
+      favoritedImagesPage.value.hasMore = newImages.length >= favoritedImagesPage.value.pageSize
+      favoritedImagesPage.value.pageNum++
+      favoritedImagesPage.value.loaded = true
+    }
+  } catch (error) {
+    console.error('加载收藏图片失败：', error)
+    uni.showToast({ title: '加载失败', icon: 'none' })
+  } finally {
+    // 只有请求ID匹配时才关闭loading
+    if (requestId === loadingRequestId.value) {
+      favoritedImagesPage.value.loading = false
+    }
+  }
+}
+
 const handleCheckin = () => {
   uni.navigateTo({ url: '/pages/member-checkin' })
 }
@@ -439,9 +1015,44 @@ const handleScan = () => {
   uni.showToast({ title: '扫一扫功能开发中', icon: 'none' })
 }
 
-const handleEditSignature = () => {
-  uni.showToast({ title: '编辑签名功能开发中', icon: 'none' })
+// 加载当前Tab的数据
+const loadCurrentTabData = () => {
+  switch (currentTab.value) {
+    case 0:
+      if (!myImagesPage.value.loaded) {
+        loadMyImages(true)
+      }
+      break
+    case 1:
+      if (!myAlbumsPage.value.loaded) {
+        loadMyAlbums(true)
+      }
+      break
+    case 2:
+      if (!likedImagesPage.value.loaded) {
+        loadLikedImages(true)
+      }
+      break
+    case 3:
+      if (!favoritedImagesPage.value.loaded) {
+        loadFavoritedImages(true)
+      }
+      break
+  }
 }
+
+// 监听Tab切换
+const handleTabChange = (index) => {
+  if (currentTab.value === index) return
+  
+  // 切换Tab时，增加请求ID，使之前的请求失效
+  loadingRequestId.value++
+  
+  currentTab.value = index
+  loadCurrentTabData()
+}
+
+
 
 const handleSearch = () => {
   uni.showToast({ title: '搜索功能开发中', icon: 'none' })
@@ -622,29 +1233,24 @@ const handleDrawerItem = (type) => {
       justify-content: space-between;
       margin-bottom: 20rpx;
       
-      .avatar-box {
-        position: relative;
-        width: 140rpx;
-        height: 140rpx;
+      // AvatarUpload组件样式
+      .avatar-upload {
+        width: 140rpx !important;
+        height: 140rpx !important;
         
-        .avatar {
-          width: 100%;
-          height: 100%;
-          border-radius: 50%;
-          border: 4rpx solid rgba(255,255,255,0.2);
-        }
-        
-        .edit-icon {
-          position: absolute;
-          bottom: 0;
-          right: 0;
-          width: 36rpx;
-          height: 36rpx;
-          background: #FFD600;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+        .avatar-wrapper {
+          width: 140rpx !important;
+          height: 140rpx !important;
+          
+          .avatar-image {
+            width: 140rpx !important;
+            height: 140rpx !important;
+            border: 4rpx solid rgba(255,255,255,0.2);
+          }
+          
+          .camera-icon {
+            background: #FFD600;
+          }
         }
       }
       
@@ -856,44 +1462,178 @@ const handleDrawerItem = (type) => {
 
 // 内容区域
 .content-area {
-  background: #fff;
+  background: #f7f7f7;
   min-height: 400rpx;
-  padding: 20rpx;
+  padding: 20rpx 0;
   
-  .waterfall {
+  .tab-content {
+    min-height: 400rpx;
+    overflow: hidden; // 防止内容溢出
+  }
+  
+  // 空状态
+  .empty-state {
     display: flex;
-    margin: 0 -6rpx;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 120rpx 0;
     
-    .column {
+    .empty-icon {
+      font-size: 100rpx;
+      margin-bottom: 20rpx;
+    }
+    
+    .empty-text {
+      font-size: 28rpx;
+      color: #999;
+    }
+  }
+  
+  // 加载中状态
+  .loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 120rpx 0;
+    
+    .loading-spinner {
+      width: 80rpx;
+      height: 80rpx;
+      border: 4rpx solid #f3f3f3;
+      border-top: 4rpx solid #333;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    .loading-text {
+      font-size: 28rpx;
+      color: #999;
+      margin-top: 20rpx;
+    }
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  // 瀑布流容器
+  .waterfall-container {
+    display: flex;
+    padding: 0 16rpx;
+    gap: 12rpx;
+    width: 100%;
+    box-sizing: border-box;
+    
+    .waterfall-column {
       flex: 1;
-      padding: 0 6rpx;
+      display: flex;
+      flex-direction: column;
+      min-width: 0; // 防止flex子项溢出
       
-      .card {
+      .waterfall-item {
         background: #fff;
-        border-radius: 16rpx;
+        border-radius: 12rpx;
         overflow: hidden;
         margin-bottom: 12rpx;
-        box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.06);
+        width: 100%;
         
-        .cover {
+        .item-image {
           width: 100%;
-          height: 300rpx;
+          display: block;
         }
         
-        .info {
-          padding: 16rpx;
+        .item-info {
+          padding: 12rpx;
           
-          .title {
+          .item-title {
             font-size: 26rpx;
             color: #333;
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+            overflow: hidden;
+            line-height: 1.4;
+            margin-bottom: 8rpx;
+            word-break: break-all; // 强制换行
+          }
+          
+          .item-meta {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            
+            .like-info {
+              display: flex;
+              align-items: center;
+              gap: 4rpx;
+              font-size: 22rpx;
+              color: #999;
+            }
           }
         }
       }
     }
   }
   
+  // 加载提示
+  .load-tip {
+    padding: 30rpx 0;
+    text-align: center;
+    
+    text {
+      font-size: 24rpx;
+      color: #999;
+    }
+  }
+  
+  // 相册网格
+  .album-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16rpx;
+    padding: 0 20rpx;
+    width: 100%;
+    box-sizing: border-box;
+    
+    .album-card {
+      background: #fff;
+      border-radius: 16rpx;
+      overflow: hidden;
+      width: 100%;
+      
+      .album-cover {
+        width: 100%;
+        height: 300rpx;
+      }
+      
+      .album-info {
+        padding: 16rpx;
+        
+        .album-title {
+          font-size: 28rpx;
+          color: #333;
+          font-weight: 500;
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 1;
+          overflow: hidden;
+          margin-bottom: 8rpx;
+          word-break: break-all; // 强制换行
+        }
+        
+        .album-count {
+          font-size: 24rpx;
+          color: #999;
+        }
+      }
+    }
+  }
+  
   .footer-tip {
-    padding: 60rpx 0;
+    padding: 40rpx 0 60rpx;
     text-align: center;
     
     text {

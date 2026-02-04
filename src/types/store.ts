@@ -6,6 +6,7 @@ export interface UserState {
     avatar: string,
     roles: Array<string>
     permissions: Array<string>
+    userProfile: any
 }
 
 export interface UserForm {

@@ -10,7 +10,8 @@ let storageNodeKeys = [
   constant.roles, 
   constant.permissions,
   constant.info,
-  constant.websiteConfig
+  constant.websiteConfig,
+  constant.userProfile
 ]
 
 const storage = {

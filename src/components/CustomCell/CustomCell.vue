@@ -1,5 +1,5 @@
 <template>
-  <view class="xhs-cell" :class="{'xhs-cell--clickable': clickable}" @click="handleClick">
+  <view class="xhs-cell" :class="{'xhs-cell--clickable': clickable}" @tap="handleClick">
     <view class="xhs-cell__icon" v-if="$slots.icon || icon">
       <slot name="icon">
         <u-icon v-if="icon" :name="icon" :color="iconColor" :size="iconSize"></u-icon>
@@ -36,7 +36,7 @@ const props = defineProps({
     default: ''
   },
   value: {
-    type: String,
+    type: [String, Number], // 支持字符串和数字
     default: ''
   },
   icon: {
@@ -61,11 +61,12 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['click'])
+const emit = defineEmits(['tap', 'click'])
 
 const handleClick = () => {
   if (props.clickable) {
-    emit('click')
+    emit('tap')
+    emit('click') // 兼容旧代码
   }
 }
 </script>

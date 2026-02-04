@@ -67,7 +67,7 @@
         />
         <CustomCell 
           title="未成年人模式" 
-          icon="shield"
+          icon="grid"
           value="未开启"
           :isLink="true"
           @click="handleToTeenMode"
@@ -93,7 +93,7 @@
           @click="handleToHelp"
         />
         <CustomCell 
-          title="关于小红书" 
+          title="关于我们"
           icon="info-circle"
           :isLink="true"
           @click="handleToAbout"
@@ -142,7 +142,7 @@ const calculateStorage = () => {
 
 // 账号与安全
 const handleToSecurity = () => {
-  uni.showToast({ title: '账号与安全功能开发中', icon: 'none' })
+  uni.navigateTo({ url: '/pages_mine/pages/security/index' })
 }
 
 // 通用设置
