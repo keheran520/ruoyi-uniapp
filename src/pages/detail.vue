@@ -54,8 +54,14 @@
             <text class="author-name">{{ detail.createByUser?.nickName || '游客' }}</text>
             <text class="author-desc">{{ detail.createTime }}</text>
           </view>
-          <view class="follow-btn" v-if="!isFollowing" @click.stop="handleFollow">
-            <text>关注</text>
+          <view 
+            v-if="!isOwnImage"
+            class="follow-btn" 
+            :class="{'following': isFollowing, 'loading': followLoading}" 
+            @click.stop="handleFollow"
+          >
+            <view v-if="followLoading" class="loading-spinner-btn"></view>
+            <text v-else>{{ isFollowing ? '已关注' : '关注' }}</text>
           </view>
         </view>
         
@@ -308,7 +314,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { getPublicImageDetail } from '@/api/picturebed/open'
 import { 
@@ -324,6 +330,8 @@ import {
   likeComment,
   unlikeComment
 } from '@/api/mobile/interaction'
+import { followUser, unfollowUser, checkFollowStatus } from '@/api/mobile/follow'
+import store from '@/store'
 
 // 状态
 const statusBarHeight = ref(0)
@@ -333,11 +341,21 @@ const isLiked = ref(false)
 const isFavorited = ref(false)
 const isFollowing = ref(false)
 
+// 当前登录用户ID
+const currentUserId = computed(() => store.state.user.userProfile?.userId)
+
+// 是否是自己的图片
+const isOwnImage = computed(() => {
+  return currentUserId.value && detail.value.createBy && 
+         String(currentUserId.value) === String(detail.value.createBy)
+})
+
 // Loading状态
 const pageLoading = ref(true) // 页面加载状态
 const likeLoading = ref(false) // 点赞加载状态
 const favoriteLoading = ref(false) // 收藏加载状态
 const commentSubmitLoading = ref(false) // 评论提交加载状态
+const followLoading = ref(false) // 关注加载状态
 
 // 评论相关
 const commentList = ref<any[]>([])
@@ -375,6 +393,8 @@ const loadDetail = async () => {
     const res = await getPublicImageDetail(imageId.value)
     if (res.code === 200) {
       detail.value = res.data
+      // 加载关注状态
+      await loadFollowStatus()
     }
   } catch (error) {
     console.error('加载失败:', error)
@@ -397,6 +417,20 @@ const loadInteractionStatus = async () => {
     }
   } catch (error) {
     console.error('加载互动状态失效', error)
+  }
+}
+
+// 加载关注状态
+const loadFollowStatus = async () => {
+  if (!detail.value.createBy) return
+  
+  try {
+    const res = await checkFollowStatus(detail.value.createBy)
+    if (res.code === 200) {
+      isFollowing.value = res.data || false
+    }
+  } catch (error) {
+    console.error('加载关注状态失败', error)
   }
 }
 
@@ -512,11 +546,72 @@ const handleFavorite = async () => {
 }
 
 // 关注
-const handleFollow = () => {
-  uni.showToast({
-    title: '关注功能开发中',
-    icon: 'none'
-  })
+const handleFollow = async () => {
+  if (!detail.value.createBy) {
+    uni.showToast({
+      title: '用户信息不存在',
+      icon: 'none'
+    })
+    return
+  }
+  
+  // 检查是否是自己的图片
+  if (isOwnImage.value) {
+    uni.showToast({
+      title: '不能关注自己',
+      icon: 'none'
+    })
+    return
+  }
+  
+  if (followLoading.value) return
+  
+  try {
+    followLoading.value = true
+    
+    if (isFollowing.value) {
+      const res = await unfollowUser(detail.value.createBy)
+      if (res.code === 200) {
+        isFollowing.value = false
+        uni.showToast({
+          title: '已取消关注',
+          icon: 'none'
+        })
+      } else {
+        // 显示后端返回的错误信息
+        uni.showToast({
+          title: res.msg || '操作失败',
+          icon: 'none'
+        })
+      }
+    } else {
+      const res = await followUser(detail.value.createBy)
+      if (res.code === 200) {
+        isFollowing.value = true
+        uni.showToast({
+          title: '关注成功',
+          icon: 'success'
+        })
+      } else {
+        // 显示后端返回的错误信息
+        uni.showToast({
+          title: res.msg || '操作失败',
+          icon: 'none'
+        })
+      }
+    }
+  } catch (error: any) {
+    console.error('操作失败:', error)
+    // 显示后端返回的错误信息
+    const errorMsg = error?.data?.msg || error?.msg || '操作失败，请重试'
+    uni.showToast({
+      title: errorMsg,
+      icon: 'none',
+      duration: 2000
+    })
+  } finally {
+    followLoading.value = false
+  }
 }
 
 // 打开评论输入�?
@@ -678,9 +773,16 @@ const handleTagClick = (tag: any) => {
 
 // 跳转用户主页
 const goToUserProfile = () => {
-  uni.showToast({
-    title: '用户主页开发中',
-    icon: 'none'
+  if (!detail.value.createBy) {
+    uni.showToast({
+      title: '用户信息不存在',
+      icon: 'none'
+    })
+    return
+  }
+  
+  uni.navigateTo({
+    url: `/pages_mine/pages/user/profile?userId=${detail.value.createBy}`
   })
 }
 
@@ -954,6 +1056,33 @@ const formatTime = (time: string) => {
     padding: 12rpx 32rpx;
     background: #ff2442;
     border-radius: 40rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 120rpx;
+    transition: all 0.3s;
+    
+    &.following {
+      background: #f0f0f0;
+      
+      text {
+        color: #666;
+      }
+    }
+    
+    &.loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+    
+    .loading-spinner-btn {
+      width: 28rpx;
+      height: 28rpx;
+      border: 3rpx solid rgba(255, 255, 255, 0.3);
+      border-top: 3rpx solid #fff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
     
     text {
       font-size: 26rpx;
@@ -1016,8 +1145,8 @@ const formatTime = (time: string) => {
   
   .tag-item {
     padding: 12rpx 24rpx;
-    background: #f7f7f7;
-    border-radius: 8rpx;
+    background: #000000;
+    border-radius: 14rpx;
     border: 1rpx solid #e0e0e0;
     margin-right: 16rpx;
     margin-bottom: 16rpx;

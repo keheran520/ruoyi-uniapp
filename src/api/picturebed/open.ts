@@ -54,7 +54,7 @@ export function getRecommendImages(query: any) {
     method: 'GET',
     params: query,
     headers: {
-      isToken: false,
+      isToken: true,
       isEncrypt: false
     }
   })
@@ -230,5 +230,31 @@ export function getGuessTags(limit: number = 6, searchHistory?: string[]) {
       isToken: false,
       isEncrypt: false
     }
+  })
+}
+
+/**
+ * 获取用户图片列表
+ */
+export function getUserImages(query: any) {
+  return request({
+    url: '/open/picturebed/image/user',
+    method: 'GET',
+    params: query,
+    headers: {
+      isToken: false,
+      isEncrypt: false
+    }
+  })
+}
+
+/**
+ * 获取关注用户发布的图片
+ */
+export function getFollowingImages(query: any) {
+  return request({
+    url: '/open/picturebed/image/following',
+    method: 'GET',
+    params: query
   })
 }

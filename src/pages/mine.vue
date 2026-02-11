@@ -1,56 +1,52 @@
 <template>
   <view class="mine-page">
+    <!-- 页面加载中遮罩 -->
+    <view v-if="pageLoading" class="page-loading-mask">
+      <view class="loading-content">
+        <view class="loading-spinner-large"></view>
+        <text class="loading-text">加载中...</text>
+      </view>
+    </view>
+    
+    <!-- 使用 u-navbar 官方导航栏 -->
+    <u-navbar 
+      :background="navbarBg"
+      :border-bottom="false"
+      :fixed="true"
+      :safe-area-inset-top="true"
+      :placeholder="true"
+    >
+      <template #left>
+        <view class="navbar-btn" @click="showDrawer = true">
+          <u-icon name="list" :color="isScrolled ? '#333' : '#fff'" size="24"></u-icon>
+        </view>
+      </template>
+      
+      <template #center>
+        <!-- 滚动后显示头像 -->
+        <view v-if="showNavbarAvatar" class="navbar-avatar" @click="handleToInfo">
+          <image class="avatar-img" :src="userInfo?.avatar || '/static/images/profile.jpg'" mode="aspectFill"></image>
+        </view>
+      </template>
+      
+      <template #right>
+        <view class="navbar-btn" @click="handleScan">
+          <u-icon name="scan" :color="isScrolled ? '#333' : '#fff'" size="24"></u-icon>
+        </view>
+      </template>
+    </u-navbar>
+    
     <!-- 可滚动内容 -->
     <scroll-view 
       class="scroll-content" 
       scroll-y 
       @scroll="onScroll"
+      :style="{height: scrollHeight + 'px'}"
     >
 <!--      :style="{height: scrollHeight + 'px'}"-->
 
       <!-- 头部区域 -->
       <view class="header-section">
-        <!-- 固定顶部导航栏（在头部区域内，透明覆盖） -->
-        <view class="fixed-navbar" :class="{'scrolled': isScrolled}" :style="{background: navbarBg}">
-          <!-- 非H5端顶部安全区域（小程序和App） -->
-          <!-- #ifndef H5 -->
-          <view :style="{height: statusBarHeight + 'px'}"></view>
-          <!-- #endif -->
-          
-          <view class="navbar-content" :style="{height: navbarContentHeight + 'px'}">
-            <!-- H5端和App端：左右分开布局 -->
-            <!-- #ifndef MP -->
-            <view class="navbar-left" @click="showDrawer = true">
-              <u-icon name="list" :color="isScrolled ? '#333' : '#fff'" size="24"></u-icon>
-            </view>
-            
-            <!-- 滚动后显示的头像（使用computed确保条件严格） -->
-            <view class="navbar-avatar" v-if="showNavbarAvatar" @click="handleToInfo">
-              <image class="avatar-img" :src="userInfo?.avatar || '/static/images/profile.jpg'" mode="aspectFill"></image>
-            </view>
-            
-            <view class="navbar-right" @click="handleScan">
-              <u-icon name="scan" :color="isScrolled ? '#333' : '#fff'" size="24"></u-icon>
-            </view>
-            <!-- #endif -->
-            
-            <!-- 小程序端：左侧胶囊样式 -->
-            <!-- #ifdef MP -->
-            <view class="navbar-capsule" @click="showDrawer = true">
-              <view class="capsule-icon">
-                <u-icon name="list" :color="isScrolled ? '#333' : '#fff'" size="20"></u-icon>
-              </view>
-              <view class="capsule-divider"></view>
-              <view class="capsule-icon" @click.stop="handleScan">
-                <u-icon name="scan" :color="isScrolled ? '#333' : '#fff'" size="20"></u-icon>
-              </view>
-            </view>
-            
-            <!-- 占位，保持居中 -->
-            <view class="navbar-placeholder"></view>
-            <!-- #endif -->
-          </view>
-        </view>
         
         <image class="bg-image" :src="userBgImage || '/static/images/profile.jpg'" mode="aspectFill"></image>
         <view class="bg-mask"></view>
@@ -72,27 +68,29 @@
             </view>
           </view>
           
-          <view class="nickname" @tap="handleToEditInfo">{{ userInfo?.nickName || userInfo?.userName || 'xxxxxxxxx' }}</view>
+          <view class="nickname" @tap="handleToEditInfo">
+            {{ userInfo?.nickName || userInfo?.userName || (pageLoading ? '加载中...' : '未设置昵称') }}
+          </view>
           <view class="user-id" @tap="handleCopyUserId">
-            <text>用户ID: {{ userInfo?.userId || 'xxxxxxxxx' }}</text>
+            <text>用户ID: {{ userInfo?.userId || (pageLoading ? '...' : '未知') }}</text>
           </view>
           <view class="bio" @tap="handleToEditInfo">
-            <text>{{ userInfo?.signature || '点击这里,填写简介' }}</text>
+            <text>{{ userInfo?.signature || (pageLoading ? '加载中...' : '点击这里,填写简介') }}</text>
           </view>
         </view>
         
         <!-- 统计数据 -->
         <view class="stats">
-          <view class="stat-item" @click="handleToMyWorks">
-            <text class="num">{{ creationData.worksCount || 14 }}</text>
+          <view class="stat-item" @click="handleToFollowing">
+            <text class="num">{{ followStatistics.followingCount || 0 }}</text>
             <text class="label">关注</text>
           </view>
-          <view class="stat-item" @click="handleToFans">
-            <text class="num">{{ creationData.fansCount || 8 }}</text>
+          <view class="stat-item" @click="handleToFollowers">
+            <text class="num">{{ followStatistics.followerCount || 0 }}</text>
             <text class="label">粉丝</text>
           </view>
           <view class="stat-item" @click="handleToLikes">
-            <text class="num">{{ creationData.likesCount || 36 }}</text>
+            <text class="num">{{ creationData.likesCount || 0 }}</text>
             <text class="label">获赞与收藏</text>
           </view>
         </view>
@@ -109,7 +107,7 @@
       </view>
       
       <!-- Tab标签（吸顶） -->
-      <view class="tabs-wrapper" :class="{'fixed': isTabFixed}" :style="isTabFixed ? {paddingTop: tabFixedPaddingTop} : {}">
+      <view class="tabs-wrapper" :class="{'fixed': isTabFixed}">
         <view class="tabs">
           <view 
             class="tab-item" 
@@ -421,6 +419,7 @@ import { onShow, onReachBottom, onPullDownRefresh } from '@dcloudio/uni-app'
 import store from '@/store'
 import { getMemberInfo, getCheckinStatus } from '@/api/mobile/member'
 import { getMyImages, getMyAlbums, getLikedImages, getFavoritedImages } from '@/api/mobile/interaction'
+import { getFollowStatistics } from '@/api/mobile/follow'
 import CustomCell from '@/components/CustomCell/CustomCell.vue'
 import CustomCellGroup from '@/components/CustomCellGroup/CustomCellGroup.vue'
 import AvatarUpload from '@/components/AvatarUpload/AvatarUpload.vue'
@@ -434,6 +433,8 @@ const userBgImage = ref('')
 const userSignature = ref('')
 const creationData = ref({ worksCount: 0, likesCount: 0, fansCount: 0 })
 const orderCount = ref(0)
+const followStatistics = ref({ followingCount: 0, followerCount: 0, friendCount: 0 })
+const pageLoading = ref(true) // 页面加载状态
 
 // 滚动相关
 const scrollTop = ref(0)
@@ -443,10 +444,7 @@ const statusBarHeight = ref(0)
 const scrollHeight = ref(0)
 const currentTab = ref(0)
 const tabs = ['图片', '相册', '点赞过', '收藏过']
-const navbarContentHeight = ref(44) // 导航栏内容高度
 const loadingRequestId = ref(0) // 请求ID，用于防止数据混乱
-const navbarTotalHeight = ref(0) // 导航栏总高度（状态栏+内容）
-const menuButtonInfo = ref({}) // 胶囊按钮信息
 const drawerScrollHeight = ref(0) // 抽屉滚动区域高度
 
 // 内容数据
@@ -486,10 +484,10 @@ const showNavbarAvatar = computed(() => {
   return scrollTop.value >= 50
 })
 
-// Tab吸顶时的padding-top
-const tabFixedPaddingTop = computed(() => {
-  return `${navbarTotalHeight.value}px`
-})
+// Tab吸顶时的padding-top（不再需要，因为u-navbar自带placeholder）
+// const tabFixedPaddingTop = computed(() => {
+//   return `${navbarTotalHeight.value}px`
+// })
 
 // Tab的transform动画
 const tabTransform = computed(() => {
@@ -524,35 +522,6 @@ onMounted(() => {
   const systemInfo = uni.getSystemInfoSync()
   statusBarHeight.value = systemInfo.statusBarHeight || 0
   
-  // #ifdef MP
-  // 获取胶囊按钮信息（仅小程序）
-  try {
-    const menuButton = uni.getMenuButtonBoundingClientRect()
-    menuButtonInfo.value = menuButton
-    
-    // 计算导航栏内容高度（与胶囊按钮对齐）
-    navbarContentHeight.value = menuButton.height + (menuButton.top - statusBarHeight.value) * 2
-  } catch (e) {
-    console.error('获取胶囊信息失败:', e)
-    navbarContentHeight.value = 44
-  }
-  // #endif
-  
-  // #ifndef MP
-  // H5和App端使用默认高度
-  navbarContentHeight.value = 44
-  // #endif
-  
-  // 计算导航栏总高度
-  // #ifndef H5
-  // 小程序和App端：状态栏 + 导航栏内容
-  navbarTotalHeight.value = statusBarHeight.value + navbarContentHeight.value
-  // #endif
-  // #ifdef H5
-  // H5端：仅导航栏内容
-  navbarTotalHeight.value = navbarContentHeight.value
-  // #endif
-  
   // 计算滚动区域高度
   scrollHeight.value = systemInfo.windowHeight
   
@@ -567,7 +536,20 @@ onMounted(() => {
 })
 
 const loadData = async () => {
+  // 设置超时定时器（10秒后自动关闭loading）
+  const timeoutId = setTimeout(() => {
+    if (pageLoading.value) {
+      pageLoading.value = false
+      uni.showToast({
+        title: '加载超时，请检查网络',
+        icon: 'none',
+        duration: 2000
+      })
+    }
+  }, 10000)
+  
   try {
+    pageLoading.value = true
     const res = await getMemberInfo()
     if (res.data) {
       memberInfo.value = res.data
@@ -582,8 +564,31 @@ const loadData = async () => {
     
     const signRes = await getCheckinStatus()
     isSigned.value = signRes.data
+    
+    // 加载关注统计
+    await loadFollowStatistics()
   } catch (e) {
     console.error('加载失败', e)
+    uni.showToast({
+      title: '加载失败，请重试',
+      icon: 'none',
+      duration: 2000
+    })
+  } finally {
+    clearTimeout(timeoutId) // 清除超时定时器
+    pageLoading.value = false
+  }
+}
+
+// 加载关注统计
+const loadFollowStatistics = async () => {
+  try {
+    const res = await getFollowStatistics()
+    if (res.code === 200 && res.data) {
+      followStatistics.value = res.data
+    }
+  } catch (error) {
+    console.error('加载关注统计失败:', error)
   }
 }
 
@@ -719,7 +724,7 @@ const handleAvatarSuccess = (data) => {
   })
   
   // 刷新用户信息
-  loadUserInfo()
+  loadData()
 }
 
 // 头像上传失败
@@ -744,8 +749,26 @@ const handleToMyWorks = () => {
   uni.showToast({ title: '功能开发中', icon: 'none' })
 }
 
+// 跳转到关注列表
+const handleToFollowing = () => {
+  if (!store.state.user.token) {
+    uni.navigateTo({ url: '/pages/login' })
+    return
+  }
+  uni.navigateTo({ url: '/pages_mine/pages/follow/index?tab=following' })
+}
+
+// 跳转到粉丝列表
+const handleToFollowers = () => {
+  if (!store.state.user.token) {
+    uni.navigateTo({ url: '/pages/login' })
+    return
+  }
+  uni.navigateTo({ url: '/pages_mine/pages/follow/index?tab=followers' })
+}
+
 const handleToFans = () => {
-  uni.showToast({ title: '功能开发中', icon: 'none' })
+  handleToFollowers()
 }
 
 const handleToLikes = () => {
@@ -1092,92 +1115,74 @@ const handleDrawerItem = (type) => {
   position: relative;
 }
 
-// 固定导航栏（在头部区域内）
-.fixed-navbar {
-  position: absolute;
+// 页面加载遮罩
+.page-loading-mask {
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  z-index: 999;
-  transition: background 0.3s ease;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
   
-  &.scrolled {
-    position: fixed;
-  }
-  
-  .navbar-content {
+  .loading-content {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: space-between;
-    padding: 20rpx 30rpx;
-    height: 88rpx;
+    gap: 20rpx;
     
-    // H5端样式
-    .navbar-left,
-    .navbar-right {
+    .loading-spinner-large {
       width: 60rpx;
       height: 60rpx;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      border: 4rpx solid #f3f3f3;
+      border-top: 4rpx solid #000;
       border-radius: 50%;
-      background: rgba(0, 0, 0, 0.3);
-      backdrop-filter: blur(10px);
-      transition: all 0.2s;
-      
-      &:active {
-        transform: scale(0.95);
-        opacity: 0.8;
-      }
+      animation: spin 1s linear infinite;
     }
     
-    .navbar-avatar {
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      
-      .avatar-img {
-        width: 60rpx;
-        height: 60rpx;
-        border-radius: 50%;
-        border: 2rpx solid #fff;
-      }
+    .loading-text {
+      font-size: 28rpx;
+      color: #666;
     }
-    
-    // 小程序端胶囊样式
-    .navbar-capsule {
-      display: flex;
-      align-items: center;
-      height: 64rpx;
-      background: rgba(0, 0, 0, 0.3);
-      backdrop-filter: blur(10px);
-      border-radius: 32rpx;
-      padding: 0 8rpx;
-      transition: all 0.2s;
-      
-      &:active {
-        opacity: 0.8;
-      }
-      
-      .capsule-icon {
-        width: 48rpx;
-        height: 48rpx;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-      
-      .capsule-divider {
-        width: 1rpx;
-        height: 32rpx;
-        background: rgba(255, 255, 255, 0.3);
-        margin: 0 8rpx;
-      }
-    }
-    
-    .navbar-placeholder {
-      width: 60rpx;
-    }
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+// 新增：u-navbar按钮样式
+.navbar-btn {
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  transition: all 0.2s;
+  
+  &:active {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+}
+
+// 新增：导航栏头像样式
+.navbar-avatar {
+  display: flex;
+  justify-content: center;
+  
+  .avatar-img {
+    width: 60rpx;
+    height: 60rpx;
+    border-radius: 50%;
+    border: 2rpx solid #fff;
   }
 }
 
@@ -1189,17 +1194,9 @@ const handleDrawerItem = (type) => {
 // 头部区域
 .header-section {
   position: relative;
-  min-height: 600rpx;
+  //min-height: 600rpx;
   background: linear-gradient(180deg, #2C5F5D 0%, #1F3A3D 100%);
-  /* #ifdef H5 */
-  padding-top: 120rpx;
-  /* #endif */
-  /* #ifdef MP */
-  padding-top: 180rpx;  // 小程序端增加padding避免与胶囊重合
-  /* #endif */
-  /* #ifdef APP-PLUS */
-  padding-top: 140rpx;  // App端
-  /* #endif */
+  padding-top: 40rpx;  // 统一使用较小的padding
   padding-left: 30rpx;
   padding-right: 30rpx;
   padding-bottom: 30rpx;

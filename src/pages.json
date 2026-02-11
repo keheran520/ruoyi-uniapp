@@ -134,6 +134,20 @@
           "style": {
             "navigationBarTitleText": "关于我们"
           }
+        },
+        {
+          "path": "follow/index",
+          "style": {
+            "navigationBarTitleText": "关注和粉丝",
+            "navigationStyle": "custom"
+          }
+        },
+        {
+          "path": "user/profile",
+          "style": {
+            "navigationBarTitleText": "用户主页",
+            "navigationStyle": "custom"
+          }
         }
       ]
     },

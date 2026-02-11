@@ -82,6 +82,9 @@ uni-tabbar-bottom<template>
               <text class="item-title">{{ item.imageName || item.originalName }}</text>
               <view class="item-meta">
                 <view class="author-info">
+                  <view class="following-badge" v-if="item.isFollowing">
+                    <text>已关注</text>
+                  </view>
                   <image 
                     class="author-avatar" 
                     :src="item.createByUser?.avatar || '/static/images/profile.jpg'" 
@@ -115,6 +118,9 @@ uni-tabbar-bottom<template>
               <text class="item-title">{{ item.imageName || item.originalName }}</text>
               <view class="item-meta">
                 <view class="author-info">
+                  <view class="following-badge" v-if="item.isFollowing">
+                    <text>已关注</text>
+                  </view>
                   <image 
                     class="author-avatar" 
                     :src="item.createByUser?.avatar || '/static/images/profile.jpg'" 
@@ -150,7 +156,7 @@ uni-tabbar-bottom<template>
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { getPublicImages, getRecommendImages, getPublicCategories } from '@/api/picturebed/open'
+import { getPublicImages, getRecommendImages, getPublicCategories, getFollowingImages } from '@/api/picturebed/open'
 
 // 状态
 const statusBarHeight = ref(0)
@@ -265,13 +271,14 @@ const loadData = async () => {
     }
     
     // 根据Tab选择不同的接口
-    const api = currentTab.value === 0 ? getPublicImages : getRecommendImages
+    const api = currentTab.value === 0 ? getFollowingImages : getRecommendImages
     const res = await api(params)
     
     if (res.code === 200) {
       const newImages = res.rows || []
       imageList.value = [...imageList.value, ...newImages]
-      hasMore.value = newImages.length === queryParams.value.pageSize
+      // 正确的判断：已加载数量 < 总数量
+      hasMore.value = imageList.value.length < res.total
       queryParams.value.pageNum++
     }
   } catch (error) {
@@ -495,6 +502,22 @@ const handleImageClick = (item: any) => {
             align-items: center;
             flex: 1;
             min-width: 0;
+            
+            .following-badge {
+              display: flex;
+              align-items: center;
+              padding: 8rpx 8rpx;
+              background: #FFEEE1;
+              border-radius: 8rpx;
+              margin-right: 12rpx;
+              flex-shrink: 0;
+              
+              text {
+                font-size: 20rpx;
+                color: #FF664A;
+                line-height: 1;
+              }
+            }
             
             .author-avatar {
               width: 44rpx;
