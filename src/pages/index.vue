@@ -72,12 +72,16 @@ uni-tabbar-bottom<template>
             class="waterfall-item"
             @click="handleImageClick(item)"
           >
-            <image 
-              class="item-image" 
-              :src="item.url" 
-              mode="widthFix"
-              :lazy-load="true"
-            ></image>
+            <view class="item-image-wrapper">
+              <image 
+                class="item-image" 
+                :src="item.url" 
+                mode="widthFix"
+                :lazy-load="true"
+              ></image>
+              <!-- 渐变遮罩层 -->
+              <view class="image-gradient"></view>
+            </view>
             <view class="item-info">
               <text class="item-title">{{ item.imageName || item.originalName }}</text>
               <view class="item-meta">
@@ -108,12 +112,16 @@ uni-tabbar-bottom<template>
             class="waterfall-item"
             @click="handleImageClick(item)"
           >
-            <image 
-              class="item-image" 
-              :src="item.url" 
-              mode="widthFix"
-              :lazy-load="true"
-            ></image>
+            <view class="item-image-wrapper">
+              <image 
+                class="item-image" 
+                :src="item.url" 
+                mode="widthFix"
+                :lazy-load="true"
+              ></image>
+              <!-- 渐变遮罩层 -->
+              <view class="image-gradient"></view>
+            </view>
             <view class="item-info">
               <text class="item-title">{{ item.imageName || item.originalName }}</text>
               <view class="item-meta">
@@ -464,19 +472,37 @@ const handleImageClick = (item: any) => {
     }
     
     .waterfall-item {
-      background: #fff;
       border-radius: 16rpx;
-      overflow: hidden;
       margin-bottom: 16rpx;
-      box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+      overflow: hidden;
+      background: #fff;
       
-      .item-image {
+      .item-image-wrapper {
+        position: relative;
         width: 100%;
-        display: block;
+        
+        .item-image {
+          width: 100%;
+          display: block;
+        }
+        
+        .image-gradient {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 40rpx;
+          background: linear-gradient(to bottom, 
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.5) 50%,
+            rgba(255, 255, 255, 1) 100%);
+          pointer-events: none;
+        }
       }
       
       .item-info {
         padding: 20rpx;
+        background: #fff;
         
         .item-title {
           display: block;

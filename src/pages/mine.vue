@@ -537,7 +537,7 @@ onMounted(() => {
 
 const loadData = async () => {
   // 设置超时定时器（10秒后自动关闭loading）
-  const timeoutId = setTimeout(() => {
+  const timeoutId   = setTimeout(() => {
     if (pageLoading.value) {
       pageLoading.value = false
       uni.showToast({
