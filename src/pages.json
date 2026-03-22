@@ -64,6 +64,26 @@
       }
     },
     {
+      "path": "pages/qrcode-scan",
+      "style": {
+        "navigationBarTitleText": "扫码登录"
+      }
+    },
+    {
+      "path": "pages/member-balance",
+      "style": {
+        "navigationBarTitleText": "会员资产",
+        "enablePullDownRefresh": false,
+        "onReachBottomDistance": 80
+      }
+    },
+    {
+      "path": "pages/member-checkin",
+      "style": {
+        "navigationBarTitleText": "会员签到"
+      }
+    },
+    {
       "path": "pages/common/webview/index",
       "style": {
         "navigationBarTitleText": "浏览网页"

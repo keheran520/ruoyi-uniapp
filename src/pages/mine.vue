@@ -20,6 +20,9 @@
         <view class="navbar-btn" @click="showDrawer = true">
           <u-icon name="list" :color="isScrolled ? '#333' : '#fff'" size="24"></u-icon>
         </view>
+        <view class="navbar-btn" @click="handleScan">
+          <u-icon name="scan" :color="isScrolled ? '#333' : '#fff'" size="24"></u-icon>
+        </view>
       </template>
       
       <template #center>
@@ -76,6 +79,25 @@
           </view>
           <view class="bio" @tap="handleToEditInfo">
             <text>{{ userInfo?.signature || (pageLoading ? '加载中...' : '点击这里,填写简介') }}</text>
+          </view>
+          
+          <view v-if="memberInfo.id" class="member-strip">
+            <view class="strip-item" @click.stop="handleToMemberBalance(0)">
+              <text class="strip-val">{{ memberInfo.levelName || '—' }}</text>
+              <text class="strip-label">等级</text>
+            </view>
+            <view class="strip-item" @click.stop="handleToMemberBalance(0)">
+              <text class="strip-val">{{ balanceValue }}</text>
+              <text class="strip-label">余额(元)</text>
+            </view>
+            <view class="strip-item" @click.stop="handleToMemberBalance(1)">
+              <text class="strip-val">{{ memberInfo.points ?? 0 }}</text>
+              <text class="strip-label">积分</text>
+            </view>
+            <view class="strip-item" @click.stop="handleToMemberBalance(2)">
+              <text class="strip-val">{{ memberInfo.growthValue ?? 0 }}</text>
+              <text class="strip-label">成长值</text>
+            </view>
           </view>
         </view>
         
@@ -434,7 +456,7 @@ const userSignature = ref('')
 const creationData = ref({ worksCount: 0, likesCount: 0, fansCount: 0 })
 const orderCount = ref(0)
 const followStatistics = ref({ followingCount: 0, followerCount: 0, friendCount: 0 })
-const pageLoading = ref(true) // 页面加载状态
+const pageLoading = ref(false) // 页面加载状态
 
 // 滚动相关
 const scrollTop = ref(0)
@@ -737,12 +759,16 @@ const handleToSetting = () => {
   uni.navigateTo({ url: '/pages_mine/pages/setting/index' })
 }
 
+const handleToMemberBalance = (tab) => {
+  uni.navigateTo({ url: `/pages/member-balance?tab=${tab}` })
+}
+
 const handleToBalance = () => {
-  uni.navigateTo({ url: '/pages/member-balance' })
+  handleToMemberBalance(0)
 }
 
 const handleToPoints = () => {
-  uni.navigateTo({ url: '/pages/member-balance?tab=1' })
+  handleToMemberBalance(1)
 }
 
 const handleToMyWorks = () => {
@@ -1035,7 +1061,11 @@ const handleCheckin = () => {
 }
 
 const handleScan = () => {
-  uni.showToast({ title: '扫一扫功能开发中', icon: 'none' })
+  if (!store.state.user.token) {
+    uni.navigateTo({ url: '/pages/login' })
+    return
+  }
+  uni.navigateTo({ url: '/pages/qrcode-scan' })
 }
 
 // 加载当前Tab的数据
@@ -1295,6 +1325,38 @@ const handleDrawerItem = (type) => {
       font-size: 26rpx;
       color: rgba(255,255,255,0.9);
       margin-bottom: 20rpx;
+    }
+    
+    .member-strip {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8rpx;
+      margin-bottom: 24rpx;
+      padding: 20rpx 16rpx;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 16rpx;
+      backdrop-filter: blur(8px);
+    }
+    
+    .strip-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6rpx;
+    }
+    
+    .strip-val {
+      font-size: 26rpx;
+      font-weight: 600;
+      color: #fff;
+    }
+    
+    .strip-label {
+      font-size: 22rpx;
+      color: rgba(255, 255, 255, 0.75);
     }
   }
   
