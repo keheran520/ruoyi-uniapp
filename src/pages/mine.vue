@@ -1,1783 +1,831 @@
 <template>
   <view class="mine-page">
-    <!-- 页面加载中遮罩 -->
-    <view v-if="pageLoading" class="page-loading-mask">
-      <view class="loading-content">
-        <view class="loading-spinner-large"></view>
-        <text class="loading-text">加载中...</text>
-      </view>
-    </view>
-    
-    <!-- 使用 u-navbar 官方导航栏 -->
-    <u-navbar 
-      :background="navbarBg"
-      :border-bottom="false"
+    <u-navbar
       :fixed="true"
-      :safe-area-inset-top="true"
       :placeholder="true"
+      :safe-area-inset-top="true"
+      bg-color="transparent"
+      left-icon=""
+      title=""
     >
-      <template #left>
-        <view class="navbar-btn" @click="showDrawer = true">
-          <u-icon name="list" :color="isScrolled ? '#333' : '#fff'" size="24"></u-icon>
-        </view>
-        <view class="navbar-btn" @click="handleScan">
-          <u-icon name="scan" :color="isScrolled ? '#333' : '#fff'" size="24"></u-icon>
-        </view>
-      </template>
-      
-      <template #center>
-        <!-- 滚动后显示头像 -->
-        <view v-if="showNavbarAvatar" class="navbar-avatar" @click="handleToInfo">
-          <image class="avatar-img" :src="userInfo?.avatar || '/static/images/profile.jpg'" mode="aspectFill"></image>
-        </view>
-      </template>
-      
       <template #right>
-        <view class="navbar-btn" @click="handleScan">
-          <u-icon name="scan" :color="isScrolled ? '#333' : '#fff'" size="24"></u-icon>
+        <view class="nav-actions">
+          <view class="nav-icon" @tap="goScan">
+            <u-icon name="scan" color="#1f2b38" size="20" />
+          </view>
+          <view class="nav-icon" @tap="goSetting">
+            <u-icon name="setting" color="#1f2b38" size="20" />
+          </view>
         </view>
       </template>
     </u-navbar>
-    
-    <!-- 可滚动内容 -->
-    <scroll-view 
-      class="scroll-content" 
-      scroll-y 
-      @scroll="onScroll"
-      :style="{height: scrollHeight + 'px'}"
-    >
-<!--      :style="{height: scrollHeight + 'px'}"-->
 
-      <!-- 头部区域 -->
-      <view class="header-section">
-        
-        <image class="bg-image" :src="userBgImage || '/static/images/profile.jpg'" mode="aspectFill"></image>
-        <view class="bg-mask"></view>
-        
-        <!-- 用户信息 -->
-        <view class="user-info">
-          <view class="avatar-row">
-            <AvatarUpload 
-              v-model="userInfo.avatar" 
-              :enableCrop="false"
-              @success="handleAvatarSuccess"
-              @error="handleAvatarError"
-            />
-            
-            <!-- 签到按钮（与头像同一行） -->
-            <view class="checkin-btn" @click="handleCheckin" :class="{'signed': isSigned}">
-              <u-icon name="calendar" :color="isSigned ? '#D4B07B' : '#fff'" size="16"></u-icon>
-              <text>{{ isSigned ? '已签到' : '签到' }}</text>
+    <scroll-view class="page-scroll" scroll-y>
+      <view class="hero-wrap">
+        <view class="hero-panel">
+          <view class="profile-row" @tap="goProfile">
+            <image class="avatar" :src="avatarUrl" mode="aspectFill" />
+            <view class="profile-main">
+              <view class="nickname-row">
+                <text class="nickname">{{ displayName }}</text>
+                <image class="nickname-badge" :src="currentVipMedal" mode="aspectFit" @tap.stop="goBadgeCenter" />
+              </view>
+              <text class="account">{{ maskedPhone }}</text>
+            </view>
+            <text class="profile-link">{{ mineText.editProfile }}</text>
+          </view>
+
+          <view class="stat-row">
+            <view v-for="item in statList" :key="item.key" class="stat-item">
+              <text class="stat-value">{{ item.value }}</text>
+              <text class="stat-label">{{ item.label }}</text>
             </view>
           </view>
-          
-          <view class="nickname" @tap="handleToEditInfo">
-            {{ userInfo?.nickName || userInfo?.userName || (pageLoading ? '加载中...' : '未设置昵称') }}
-          </view>
-          <view class="user-id" @tap="handleCopyUserId">
-            <text>用户ID: {{ userInfo?.userId || (pageLoading ? '...' : '未知') }}</text>
-          </view>
-          <view class="bio" @tap="handleToEditInfo">
-            <text>{{ userInfo?.signature || (pageLoading ? '加载中...' : '点击这里,填写简介') }}</text>
-          </view>
-          
-          <view v-if="memberInfo.id" class="member-strip">
-            <view class="strip-item" @click.stop="handleToMemberBalance(0)">
-              <text class="strip-val">{{ memberInfo.levelName || '—' }}</text>
-              <text class="strip-label">等级</text>
-            </view>
-            <view class="strip-item" @click.stop="handleToMemberBalance(0)">
-              <text class="strip-val">{{ balanceValue }}</text>
-              <text class="strip-label">余额(元)</text>
-            </view>
-            <view class="strip-item" @click.stop="handleToMemberBalance(1)">
-              <text class="strip-val">{{ memberInfo.points ?? 0 }}</text>
-              <text class="strip-label">积分</text>
-            </view>
-            <view class="strip-item" @click.stop="handleToMemberBalance(2)">
-              <text class="strip-val">{{ memberInfo.growthValue ?? 0 }}</text>
-              <text class="strip-label">成长值</text>
-            </view>
-          </view>
-        </view>
-        
-        <!-- 统计数据 -->
-        <view class="stats">
-          <view class="stat-item" @click="handleToFollowing">
-            <text class="num">{{ followStatistics.followingCount || 0 }}</text>
-            <text class="label">关注</text>
-          </view>
-          <view class="stat-item" @click="handleToFollowers">
-            <text class="num">{{ followStatistics.followerCount || 0 }}</text>
-            <text class="label">粉丝</text>
-          </view>
-          <view class="stat-item" @click="handleToLikes">
-            <text class="num">{{ creationData.likesCount || 0 }}</text>
-            <text class="label">获赞与收藏</text>
-          </view>
-        </view>
-        
-        <!-- 操作按钮 -->
-        <view class="action-btns">
-          <view class="edit-btn" @click="handleToEditInfo">
-            <text>编辑资料</text>
-          </view>
-          <view class="setting-btn" @click="handleToSetting">
-            <u-icon name="setting" color="#fff" size="20"></u-icon>
-          </view>
-        </view>
-      </view>
-      
-      <!-- Tab标签（吸顶） -->
-      <view class="tabs-wrapper" :class="{'fixed': isTabFixed}">
-        <view class="tabs">
-          <view 
-            class="tab-item" 
-            v-for="(tab, index) in tabs" 
-            :key="index"
-            :class="{'active': currentTab === index}"
-            @click="handleTabChange(index)"
-          >
-            <text>{{ tab }}</text>
-            <view class="line" v-if="currentTab === index"></view>
-          </view>
-        </view>
-        <view class="search-icon" @click="handleSearch">
-          <u-icon name="search" size="20" color="#999"></u-icon>
-        </view>
-      </view>
-      
-      <!-- 内容区域 -->
-      <view class="content-area">
-        <!-- Tab 0: 图片 -->
-        <view v-if="currentTab === 0" class="tab-content">
-          <!-- 加载中状态 -->
-          <view v-if="myImagesPage.loading && myImages.length === 0" class="loading-state">
-            <view class="loading-spinner"></view>
-            <text class="loading-text">加载中...</text>
-          </view>
-          <view v-else-if="myImages.length === 0 && !myImagesPage.loading" class="empty-state">
-            <text class="empty-icon">📷</text>
-            <text class="empty-text">还没有上传图片</text>
-          </view>
-          <view v-else class="waterfall-container">
-            <view class="waterfall-column">
-              <view 
-                v-for="(item, index) in leftImages" 
-                :key="item.imageId"
-                class="waterfall-item"
-                @click="handleToImageDetail(item.imageId)"
-              >
-                <image 
-                  class="item-image" 
-                  :src="item.url" 
-                  mode="widthFix"
-                  :lazy-load="true"
-                ></image>
-                <view class="item-info">
-                  <text class="item-title">{{ item.imageName }}</text>
-                  <view class="item-meta">
-                    <view class="like-info">
-                      <u-icon name="heart" size="14" color="#999"></u-icon>
-                      <text>{{ item.likeCount || 0 }}</text>
-                    </view>
-                  </view>
+
+          <view class="vip-card" @tap="goMemberCenter">
+            <image class="vip-card__bg" :src="currentVipBackground" mode="aspectFill" />
+            <view class="vip-card__mask" />
+            <view class="vip-card__inner">
+              <view class="vip-card__left">
+                <text class="vip-card__tag">{{ mineText.currentLevel }}</text>
+                <text class="vip-card__title">{{ memberTitle }}</text>
+                <text class="vip-card__desc">{{ memberSubTitle }}</text>
+                <view class="vip-card__progress">
+                  <view class="vip-card__progress-track" />
+                  <view class="vip-card__progress-fill" :style="{ width: `${growthPercent}%` }" />
+                  <view class="vip-card__progress-dot" :style="{ left: `${growthPercent}%` }" />
+                </view>
+                <view class="vip-card__foot">
+                  <text>{{ currentGrowth }} / {{ nextGrowthTarget }}</text>
+                  <text>{{ growthHint }}</text>
                 </view>
               </view>
-            </view>
-            <view class="waterfall-column">
-              <view 
-                v-for="(item, index) in rightImages" 
-                :key="item.imageId"
-                class="waterfall-item"
-                @click="handleToImageDetail(item.imageId)"
-              >
-                <image 
-                  class="item-image" 
-                  :src="item.url" 
-                  mode="widthFix"
-                  :lazy-load="true"
-                ></image>
-                <view class="item-info">
-                  <text class="item-title">{{ item.imageName }}</text>
-                  <view class="item-meta">
-                    <view class="like-info">
-                      <u-icon name="heart" size="14" color="#999"></u-icon>
-                      <text>{{ item.likeCount || 0 }}</text>
-                    </view>
-                  </view>
-                </view>
+
+              <view class="vip-card__right">
+                <image class="vip-card__medal" :src="currentVipMedal" mode="aspectFit" />
+                <view class="vip-card__action">{{ mineText.myBenefits }}</view>
               </view>
             </view>
           </view>
-          <view class="load-tip" v-if="myImages.length > 0">
-            <text v-if="myImagesPage.loading">加载中...</text>
-            <text v-else-if="!myImagesPage.hasMore">没有更多了</text>
-          </view>
         </view>
-        
-        <!-- Tab 1: 相册 -->
-        <view v-if="currentTab === 1" class="tab-content">
-          <!-- 加载中状态 -->
-          <view v-if="myAlbumsPage.loading && myAlbums.length === 0" class="loading-state">
-            <view class="loading-spinner"></view>
-            <text class="loading-text">加载中...</text>
+      </view>
+
+      <view class="content-wrap">
+        <view class="section-card">
+          <view class="section-head">
+            <text class="section-title">{{ mineText.ordersTitle }}</text>
+            <text class="section-link" @tap="goMallOrders">{{ mineText.allOrders }}</text>
           </view>
-          <view v-else-if="myAlbums.length === 0 && !myAlbumsPage.loading" class="empty-state">
-            <text class="empty-icon">📁</text>
-            <text class="empty-text">还没有创建相册</text>
-          </view>
-          <view v-else class="album-grid">
-            <view 
-              v-for="item in myAlbums" 
-              :key="item.albumId"
-              class="album-card"
-              @click="handleToAlbumDetail(item.albumId)"
+          <view class="order-grid">
+            <view
+              v-for="item in orderEntryList"
+              :key="item.key"
+              class="order-item"
+              @tap="handleOrderEntry(item.key)"
             >
-              <image class="album-cover" :src="item.coverUrl || '/static/images/default-album.jpg'" mode="aspectFill"></image>
-              <view class="album-info">
-                <text class="album-title">{{ item.albumName }}</text>
-                <text class="album-count">{{ item.imageCount || 0 }}张</text>
+              <view class="order-item__icon">
+                <u-badge
+                  v-if="item.badge"
+                  :value="item.badge"
+                  absolute
+                  :offset="[8, 8]"
+                />
+                <u-icon :name="item.icon" :color="item.color" size="24" />
               </view>
+              <text class="order-item__name">{{ item.name }}</text>
             </view>
-          </view>
-          <view class="load-tip" v-if="myAlbums.length > 0">
-            <text v-if="myAlbumsPage.loading">加载中...</text>
-            <text v-else-if="!myAlbumsPage.hasMore">没有更多了</text>
           </view>
         </view>
-        
-        <!-- Tab 2: 点赞过 -->
-        <view v-if="currentTab === 2" class="tab-content">
-          <!-- 加载中状态 -->
-          <view v-if="likedImagesPage.loading && likedImages.length === 0" class="loading-state">
-            <view class="loading-spinner"></view>
-            <text class="loading-text">加载中...</text>
+
+        <view class="checkin-card" @tap="goCheckin">
+          <view class="checkin-card__main">
+            <text class="checkin-card__title">{{ mineText.checkinTitle }}</text>
+            <text class="checkin-card__desc">{{ checkinDesc }}</text>
           </view>
-          <view v-else-if="likedImages.length === 0 && !likedImagesPage.loading" class="empty-state">
-            <text class="empty-icon">❤️</text>
-            <text class="empty-text">还没有点赞过内容</text>
-          </view>
-          <view v-else class="waterfall-container">
-            <view class="waterfall-column">
-              <view 
-                v-for="(item, index) in leftLikedImages" 
-                :key="item.imageId"
-                class="waterfall-item"
-                @click="() => handleToImageDetail(item.imageId)"
-              >
-                <image 
-                  class="item-image" 
-                  :src="item.url" 
-                  mode="widthFix"
-                  :lazy-load="true"
-                ></image>
-                <view class="item-info">
-                  <text class="item-title">{{ item.imageName }}</text>
-                  <view class="item-meta">
-                    <view class="like-info">
-                      <u-icon name="heart-fill" size="14" color="#ff2442"></u-icon>
-                      <text>{{ item.likeCount || 0 }}</text>
-                    </view>
-                  </view>
-                </view>
-              </view>
-            </view>
-            <view class="waterfall-column">
-              <view 
-                v-for="(item, index) in rightLikedImages" 
-                :key="item.imageId"
-                class="waterfall-item"
-                @click="() => handleToImageDetail(item.imageId)"
-              >
-                <image 
-                  class="item-image" 
-                  :src="item.url" 
-                  mode="widthFix"
-                  :lazy-load="true"
-                ></image>
-                <view class="item-info">
-                  <text class="item-title">{{ item.imageName }}</text>
-                  <view class="item-meta">
-                    <view class="like-info">
-                      <u-icon name="heart-fill" size="14" color="#ff2442"></u-icon>
-                      <text>{{ item.likeCount || 0 }}</text>
-                    </view>
-                  </view>
-                </view>
-              </view>
-            </view>
-          </view>
-          <view class="load-tip" v-if="likedImages.length > 0">
-            <text v-if="likedImagesPage.loading">加载中...</text>
-            <text v-else-if="!likedImagesPage.hasMore">没有更多了</text>
-          </view>
+          <view class="checkin-card__btn">{{ summary.signedToday ? mineText.checkedToday : mineText.receiveNow }}</view>
         </view>
-        
-        <!-- Tab 3: 收藏过 -->
-        <view v-if="currentTab === 3" class="tab-content">
-          <!-- 加载中状态 -->
-          <view v-if="favoritedImagesPage.loading && favoritedImages.length === 0" class="loading-state">
-            <view class="loading-spinner"></view>
-            <text class="loading-text">加载中...</text>
+
+        <view class="section-card section-card--tools">
+          <view class="section-head">
+            <text class="section-title">{{ mineText.toolsTitle }}</text>
           </view>
-          <view v-else-if="favoritedImages.length === 0 && !favoritedImagesPage.loading" class="empty-state">
-            <text class="empty-icon">⭐</text>
-            <text class="empty-text">还没有收藏过内容</text>
-          </view>
-          <view v-else class="waterfall-container">
-            <view class="waterfall-column">
-              <view 
-                v-for="(item, index) in leftLikedImages" 
-                :key="item.imageId"
-                class="waterfall-item"
-                @click="() => handleToImageDetail(item.imageId)"
-              >
-                <image 
-                  class="item-image" 
-                  :src="item.url" 
-                  mode="widthFix"
-                  :lazy-load="true"
-                ></image>
-                <view class="item-info">
-                  <text class="item-title">{{ item.imageName }}</text>
-                  <view class="item-meta">
-                    <view class="like-info">
-                      <u-icon name="heart-fill" size="14" color="#ff2442"></u-icon>
-                      <text>{{ item.likeCount || 0 }}</text>
-                    </view>
-                  </view>
+          <view class="tool-grid">
+            <view
+              v-for="item in quickActions"
+              :key="item.key"
+              class="tool-item"
+              @tap="handleQuickAction(item.key)"
+            >
+              <view class="tool-item__icon">
+                <view v-if="item.key === 'wallet'" class="wallet-icon">
+                  <view class="wallet-icon__body" />
+                  <view class="wallet-icon__slot" />
+                  <view class="wallet-icon__dot" />
                 </view>
+                <u-icon v-else :name="item.icon" color="#1f2b38" size="22" />
               </view>
-            </view>
-            <view class="waterfall-column">
-              <view 
-                v-for="(item, index) in rightLikedImages" 
-                :key="item.imageId"
-                class="waterfall-item"
-                @click="() => handleToImageDetail(item.imageId)"
-              >
-                <image 
-                  class="item-image" 
-                  :src="item.url" 
-                  mode="widthFix"
-                  :lazy-load="true"
-                ></image>
-                <view class="item-info">
-                  <text class="item-title">{{ item.imageName }}</text>
-                  <view class="item-meta">
-                    <view class="like-info">
-                      <u-icon name="heart-fill" size="14" color="#ff2442"></u-icon>
-                      <text>{{ item.likeCount || 0 }}</text>
-                    </view>
-                  </view>
-                </view>
-              </view>
+              <text class="tool-item__name">{{ item.name }}</text>
             </view>
           </view>
-          <view class="load-tip" v-if="likedImages.length > 0">
-            <text v-if="likedImagesPage.loading">加载中...</text>
-            <text v-else-if="!likedImagesPage.hasMore">没有更多了</text>
-          </view>
-        </view>
-        
-        <view class="footer-tip">
-          <text v-if="currentTab === 0 && myImages.length === 0 && !myImagesPage.loading">上传图片开始创作吧</text>
-          <text v-else-if="currentTab === 2 && likedImages.length === 0 && !likedImagesPage.loading">去发现喜欢的内容吧</text>
-          <text v-else-if="currentTab === 3 && favoritedImages.length === 0 && !favoritedImagesPage.loading">去收藏喜欢的内容吧</text>
         </view>
       </view>
+
+      <SafeArea position="bottom" background-color="#f7f4f1" />
     </scroll-view>
-    
-    <!-- 抽屉菜单 -->
-    <view class="drawer-mask" v-if="showDrawer" @click="showDrawer = false"></view>
-    <view class="drawer" :class="{'show': showDrawer}">
-      <!-- 顶部安全区域（非H5端） -->
-      <!-- #ifndef H5 -->
-      <view :style="{height: statusBarHeight + 'px'}"></view>
-      <!-- #endif -->
-      
-      <scroll-view class="drawer-scroll" scroll-y :style="{height: drawerScrollHeight + 'px'}">
-        <CustomCellGroup>
-          <CustomCell title="添加好友" icon="account" :isLink="true" @click="handleDrawerItem('friend')" />
-          <CustomCell title="创作者中心" icon="edit-pen" :isLink="true" @click="handleDrawerItem('creator')" />
-        </CustomCellGroup>
-        
-        <CustomCellGroup>
-          <CustomCell title="我的草稿" icon="file-text" :isLink="true" @click="handleDrawerItem('draft')" />
-          <CustomCell title="浏览记录" icon="clock" :isLink="true" @click="handleDrawerItem('history')" />
-          <CustomCell title="我的下载" icon="download" :isLink="true" @click="handleDrawerItem('download')" />
-        </CustomCellGroup>
-        
-        <CustomCellGroup>
-          <CustomCell title="订单" icon="order" :isLink="true" @click="handleDrawerItem('order')" />
-          <CustomCell title="购物车" icon="shopping-cart" :isLink="true" @click="handleDrawerItem('cart')" />
-          <CustomCell title="钱包" icon="wallet" :isLink="true" @click="handleDrawerItem('wallet')" />
-        </CustomCellGroup>
-        
-        <CustomCellGroup>
-          <CustomCell title="小程序" icon="grid" :isLink="true" @click="handleDrawerItem('miniapp')" />
-          <CustomCell title="社区公约" icon="chat" :isLink="true" @click="handleDrawerItem('community')" />
-        </CustomCellGroup>
-      </scroll-view>
-      
-      <view class="drawer-footer">
-        <view class="footer-btn" @click="handleHelp">
-          <u-icon name="question-circle" color="#666" size="20"></u-icon>
-          <text>帮助</text>
-        </view>
-        <view class="footer-btn" @click="handleToSetting">
-          <u-icon name="setting" color="#666" size="20"></u-icon>
-          <text>设置</text>
-        </view>
-      </view>
-    </view>
   </view>
 </template>
 
-<script setup>
-import { ref, computed, onMounted } from 'vue'
-import { onShow, onReachBottom, onPullDownRefresh } from '@dcloudio/uni-app'
+<script setup lang="ts">
+import { computed, ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import store from '@/store'
-import { getMemberInfo, getCheckinStatus } from '@/api/mobile/member'
-import { getMyImages, getMyAlbums, getLikedImages, getFavoritedImages } from '@/api/mobile/interaction'
-import { getFollowStatistics } from '@/api/mobile/follow'
-import CustomCell from '@/components/CustomCell/CustomCell.vue'
-import CustomCellGroup from '@/components/CustomCellGroup/CustomCellGroup.vue'
-import AvatarUpload from '@/components/AvatarUpload/AvatarUpload.vue'
+import { getCheckinSummary, getLevelList, getMemberDetail } from '@/api/mobile/member'
+import { getInteractionSummary } from '@/api/mobile/interaction'
+import { getMobileMessageSummary } from '@/api/mobile/messageCenter'
 
-// 状态
-const userInfo = computed(() => store.state.user.userProfile || {})
-const memberInfo = ref({})
-const isSigned = ref(false)
-const showDrawer = ref(false)
-const userBgImage = ref('')
-const userSignature = ref('')
-const creationData = ref({ worksCount: 0, likesCount: 0, fansCount: 0 })
-const orderCount = ref(0)
-const followStatistics = ref({ followingCount: 0, followerCount: 0, friendCount: 0 })
-const pageLoading = ref(false) // 页面加载状态
-
-// 滚动相关
-const scrollTop = ref(0)
-const isScrolled = ref(false)
-const isTabFixed = ref(false)
-const statusBarHeight = ref(0)
-const scrollHeight = ref(0)
-const currentTab = ref(0)
-const tabs = ['图片', '相册', '点赞过', '收藏过']
-const loadingRequestId = ref(0) // 请求ID，用于防止数据混乱
-const drawerScrollHeight = ref(0) // 抽屉滚动区域高度
-
-// 内容数据
-const myImages = ref([]) // 我的图片
-const myAlbums = ref([]) // 我的相册
-const likedImages = ref([]) // 点赞过的图片
-const favoritedImages = ref([]) // 收藏过的图片
-
-// 分页参数
-const myImagesPage = ref({ pageNum: 1, pageSize: 20, hasMore: true, loading: false, loaded: false })
-const myAlbumsPage = ref({ pageNum: 1, pageSize: 20, hasMore: true, loading: false, loaded: false })
-const likedImagesPage = ref({ pageNum: 1, pageSize: 20, hasMore: true, loading: false, loaded: false })
-const favoritedImagesPage = ref({ pageNum: 1, pageSize: 20, hasMore: true, loading: false, loaded: false })
-
-// 瀑布流左右列数据
-const leftImages = computed(() => myImages.value.filter((_, index) => index % 2 === 0))
-const rightImages = computed(() => myImages.value.filter((_, index) => index % 2 === 1))
-const leftLikedImages = computed(() => likedImages.value.filter((_, index) => index % 2 === 0))
-const rightLikedImages = computed(() => likedImages.value.filter((_, index) => index % 2 === 1))
-const leftFavoritedImages = computed(() => favoritedImages.value.filter((_, index) => index % 2 === 0))
-const rightFavoritedImages = computed(() => favoritedImages.value.filter((_, index) => index % 2 === 1))
-
-// 导航栏背景色 - 根据滚动位置动态变化
-const navbarBg = computed(() => {
-  if (scrollTop.value < 50) {
-    return 'transparent'
-  }
-  // 渐变显示背景色（与头部背景色一致）
-  const opacity = Math.min((scrollTop.value - 50) / 150, 1)
-  // return `rgba(44, 95, 93, ${opacity})` // #2C5F5D
-  return `#fff`
-})
-
-// 头像显示条件（与navbarBg保持一致）
-const showNavbarAvatar = computed(() => {
-  // 只有当背景色不是透明时才显示头像
-  return scrollTop.value >= 50
-})
-
-// Tab吸顶时的padding-top（不再需要，因为u-navbar自带placeholder）
-// const tabFixedPaddingTop = computed(() => {
-//   return `${navbarTotalHeight.value}px`
-// })
-
-// Tab的transform动画
-const tabTransform = computed(() => {
-  if (!isTabFixed.value) return 'translateY(0)'
-  // 平滑过渡动画
-  return 'translateY(0)'
-})
-
-// 余额
-const balanceValue = computed(() => {
-  const balance = memberInfo.value.balance || 0
-  return (balance / 100).toFixed(2)
-})
-
-onMounted(() => {
-  // 确保初始状态正确
-  isScrolled.value = false
-  scrollTop.value = 0
-  isTabFixed.value = false
-  
-  // 调试日志（仅App端）
-  // #ifdef APP-PLUS
-  console.log('页面初始化:', {
-    isScrolled: isScrolled.value,
-    scrollTop: scrollTop.value,
-    showNavbarAvatar: showNavbarAvatar.value,
-    navbarBg: navbarBg.value
-  })
-  // #endif
-  
-  // 获取系统信息
-  const systemInfo = uni.getSystemInfoSync()
-  statusBarHeight.value = systemInfo.statusBarHeight || 0
-  
-  // 计算滚动区域高度
-  scrollHeight.value = systemInfo.windowHeight
-  
-  // 计算抽屉滚动区域高度（总高度 - 状态栏 - 底部按钮区域）
-  const drawerFooterHeight = 100 // 底部按钮区域高度
-  // #ifndef H5
-  drawerScrollHeight.value = systemInfo.windowHeight - statusBarHeight.value - drawerFooterHeight
-  // #endif
-  // #ifdef H5
-  drawerScrollHeight.value = systemInfo.windowHeight - drawerFooterHeight
-  // #endif
-})
-
-const loadData = async () => {
-  // 设置超时定时器（10秒后自动关闭loading）
-  const timeoutId   = setTimeout(() => {
-    if (pageLoading.value) {
-      pageLoading.value = false
-      uni.showToast({
-        title: '加载超时，请检查网络',
-        icon: 'none',
-        duration: 2000
-      })
-    }
-  }, 10000)
-  
-  try {
-    pageLoading.value = true
-    const res = await getMemberInfo()
-    if (res.data) {
-      memberInfo.value = res.data
-      creationData.value = {
-        worksCount: res.data.worksCount || 0,
-        likesCount: res.data.likesCount || 0,
-        fansCount: res.data.fansCount || 0
-      }
-      userSignature.value = res.data.signature || ''
-      userBgImage.value = res.data.bgImage || ''
-    }
-    
-    const signRes = await getCheckinStatus()
-    isSigned.value = signRes.data
-    
-    // 加载关注统计
-    await loadFollowStatistics()
-  } catch (e) {
-    console.error('加载失败', e)
-    uni.showToast({
-      title: '加载失败，请重试',
-      icon: 'none',
-      duration: 2000
-    })
-  } finally {
-    clearTimeout(timeoutId) // 清除超时定时器
-    pageLoading.value = false
-  }
+const mineText = {
+  growthLabel: '\u6210\u957f\u503c',
+  editProfile: '\u7f16\u8f91\u8d44\u6599',
+  myBenefits: '\u6211\u7684\u6743\u76ca',
+  totalIncome: '\u7d2f\u8ba1\u6536\u76ca(\u5143)',
+  accountBalance: '\u8d26\u6237\u4f59\u989d(\u5143)',
+  wallet: '\u94b1\u5305',
+  badgeCenter: '\u5fbd\u7ae0\u4e2d\u5fc3',
+  ordersTitle: '\u6211\u7684\u8ba2\u5355',
+  allOrders: '\u5168\u90e8\u8ba2\u5355',
+  checkinTitle: '\u7b7e\u5230 | \u9886\u597d\u793c',
+  checkedToday: '\u4eca\u65e5\u5df2\u7b7e',
+  receiveNow: '\u7acb\u5373\u9886\u53d6',
+  toolsTitle: '\u5e38\u7528\u5de5\u5177',
+  loginNow: '\u7acb\u5373\u767b\u5f55',
+  loginHint: '\u767b\u5f55\u540e\u540c\u6b65\u4f1a\u5458\u6570\u636e',
+  defaultMember: '\u5408\u521b\u65b0\u624b',
+  maxLevel: '\u5f53\u524d\u5df2\u8fbe\u5230\u6700\u9ad8\u7b49\u7ea7',
+  currentLevel: '\u5f53\u524d\u7b49\u7ea7',
+  fullBenefits: '\u5f53\u524d\u7b49\u7ea7\u6743\u76ca\u5df2\u5168\u90e8\u89e3\u9501',
+  upgradePrefix: '\u5347\u7ea7\u81f3',
+  upgradeSuffix: '\u540e\u89e3\u9501\u66f4\u591a\u6743\u76ca',
+  nextLevelPrefix: '\u8fd8\u5dee ',
+  nextLevelSuffix: ' \u6210\u957f\u503c\u53ef\u5347\u7ea7\u4e0b\u4e00\u7b49\u7ea7',
+  checkinDescPrefix: '\u8fde\u7eed\u7b7e\u5230',
+  checkinDescSuffix: '\u5929\u53ef\u9886\u53d6\u795e\u79d8\u5927\u793c\u5305'
 }
 
-// 加载关注统计
-const loadFollowStatistics = async () => {
+const memberDetail = ref<Record<string, any>>({})
+const summary = ref<Record<string, any>>({})
+const interactionSummary = ref<Record<string, any>>({})
+const levels = ref<any[]>([])
+const unreadMessageCount = ref(0)
+
+const userProfile = computed<Record<string, any>>(() => store.state.user.userProfile || {})
+const avatarUrl = computed(() => userProfile.value.avatar || '/static/images/profile.jpg')
+const displayName = computed(() => userProfile.value.nickName || userProfile.value.userName || mineText.loginNow)
+const maskedPhone = computed(() => {
+  const phone = String(userProfile.value.phonenumber || userProfile.value.userName || '')
+  if (!phone) return mineText.loginHint
+  if (phone.length < 7) return phone
+  return `${phone.slice(0, 3)}****${phone.slice(-4)}`
+})
+
+const sortedLevels = computed(() =>
+  levels.value.slice().sort((a, b) => Number(a.requiredGrowth || 0) - Number(b.requiredGrowth || 0))
+)
+const currentLevel = computed(() => {
+  const currentId = String(memberDetail.value.levelId || '')
+  return sortedLevels.value.find((item) => String(item.id) === currentId) || sortedLevels.value[0] || {}
+})
+const nextLevel = computed(() => {
+  const currentGrowthValue = Number(memberDetail.value.growthValue || 0)
+  return sortedLevels.value.find((item) => Number(item.requiredGrowth || 0) > currentGrowthValue)
+})
+const currentGrowth = computed(() => Number(memberDetail.value.growthValue || 0))
+const nextGrowthTarget = computed(() => Number(nextLevel.value?.requiredGrowth || currentLevel.value?.requiredGrowth || currentGrowth.value || 100))
+const growthPercent = computed(() => {
+  const currentRequired = Number(currentLevel.value?.requiredGrowth || 0)
+  const nextRequired = Number(nextLevel.value?.requiredGrowth || currentRequired || 1)
+  if (!nextLevel.value || nextRequired <= currentRequired) return 100
+  const ratio = ((currentGrowth.value - currentRequired) / (nextRequired - currentRequired)) * 100
+  return Math.max(6, Math.min(100, Number(ratio.toFixed(2))))
+})
+const growthHint = computed(() => {
+  if (!nextLevel.value) return mineText.maxLevel
+  return `${mineText.upgradePrefix}${nextLevel.value.levelCode || nextLevel.value.levelName}${mineText.upgradeSuffix}`
+})
+
+const memberTitle = computed(() => `${memberDetail.value.levelCode || 'Lv.1'} ${normalizeLevelName(memberDetail.value.levelName) || mineText.defaultMember}`)
+const memberSubTitle = computed(() => {
+  if (!nextLevel.value) return mineText.fullBenefits
+  const gap = Math.max(0, Number(nextLevel.value.requiredGrowth || 0) - currentGrowth.value)
+  return `${mineText.nextLevelPrefix}${gap}${mineText.nextLevelSuffix}`
+})
+const statList = computed(() => [
+  { key: 'publish', label: '\u53d1\u5e03', value: interactionSummary.value.workCount ?? 0 },
+  { key: 'favorite', label: '\u6536\u85cf', value: interactionSummary.value.favoriteCount ?? 0 },
+  { key: 'like', label: '\u83b7\u8d5e', value: interactionSummary.value.likeCount ?? 0 },
+  { key: 'comment', label: '\u8bc4\u8bba', value: interactionSummary.value.commentCount ?? 0 }
+])
+
+const orderEntryList = computed(() => [
+  { key: 'pay', name: '\u5f85\u4ed8\u6b3e', icon: 'rmb-circle-fill',  badge: '' },
+  { key: 'ship', name: '\u5f85\u53d1\u8d27', icon: 'car-fill',  badge: '' },
+  { key: 'receive', name: '\u5f85\u6536\u8d27', icon: 'bag-fill',  badge: '' },
+  { key: 'comment', name: '\u5f85\u8bc4\u4ef7', icon: 'chat-fill',  badge: '' },
+  { key: 'after', name: '\u552e\u540e', icon: 'coupon-fill',  badge: '' }
+])
+
+const quickActions = [
+  { key: 'wallet', name: '\u94b1\u5305', icon: '' },
+  { key: 'favorite', name: '\u6211\u7684\u6536\u85cf', icon: 'heart' },
+  { key: 'service', name: '\u670d\u52a1\u4e13\u533a', icon: 'server-man' },
+  { key: 'history', name: '\u5386\u53f2\u8bb0\u5f55', icon: 'clock' },
+  { key: 'activity', name: '\u6d3b\u52a8\u4e2d\u5fc3', icon: 'gift' },
+  { key: 'task', name: '\u6bcf\u5468\u4efb\u52a1', icon: 'calendar' },
+  { key: 'address', name: '\u6536\u8d27\u5730\u5740', icon: 'map' }
+]
+
+const currentVipBackground = computed(() => {
+  const code = String(memberDetail.value.levelCode || 'V1').toUpperCase()
+  const assetMap: Record<string, string> = {
+    V1: '/static/images/vip/v1-bg.png',
+    V2: '/static/images/vip/v2-bg.png',
+    V3: '/static/images/vip/v3-bg.png',
+    V4: '/static/images/vip/v4-bg.png',
+    V5: '/static/images/vip/v5-bg.png',
+    V6: '/static/images/vip/v6-bg.png',
+    V7: '/static/images/vip/v7-bg.png',
+    SVIP7: '/static/images/vip/v7-bg.png'
+  }
+  return assetMap[code] || '/static/images/vip/v1-bg.png'
+})
+const currentVipMedal = computed(() => {
+  const code = String(memberDetail.value.levelCode || 'V1').toUpperCase()
+  const assetMap: Record<string, string> = {
+    V1: '/static/images/vip/v1-hz.png',
+    V2: '/static/images/vip/v2-hz.png',
+    V3: '/static/images/vip/v3-hz.png',
+    V4: '/static/images/vip/v4-hz.png',
+    V5: '/static/images/vip/v5-hz.png',
+    V6: '/static/images/vip/v6-hz.png',
+    V7: '/static/images/vip/v7-hz.png',
+    SVIP7: '/static/images/vip/v7-hz.png'
+  }
+  return assetMap[code] || '/static/images/vip/v1-hz.png'
+})
+
+const checkinDesc = computed(
+  () => `${mineText.checkinDescPrefix}${summary.value.continuousDays ?? 0}${mineText.checkinDescSuffix}`
+)
+
+function normalizeLevelName(value?: string) {
+  return String(value || '')
+    .replace(/^V\d+\s*/i, '')
+    .replace(/^SVIP\d+\s*/i, '')
+    .trim()
+}
+
+function formatBadgeValue(value: number) {
+  return value > 99 ? '99+' : String(value)
+}
+
+function formatMoney(value?: number | string) {
+  return ((Number(value) || 0) / 100).toFixed(2)
+}
+
+async function loadData() {
+  if (!store.state.user.token) {
+    memberDetail.value = {}
+    summary.value = {}
+    interactionSummary.value = {}
+    levels.value = []
+    unreadMessageCount.value = 0
+    return
+  }
+
   try {
-    const res = await getFollowStatistics()
-    if (res.code === 200 && res.data) {
-      followStatistics.value = res.data
-    }
+    await store.dispatch('GetUserProfile')
+    const [detailRes, summaryRes, levelRes, interactionRes, messageRes] = await Promise.all([
+      getMemberDetail(),
+      getCheckinSummary(),
+      getLevelList(),
+      getInteractionSummary(),
+      getMobileMessageSummary()
+    ])
+    memberDetail.value = detailRes.data || {}
+    summary.value = summaryRes.data || {}
+    levels.value = levelRes.data || []
+    interactionSummary.value = interactionRes.data || {}
+    unreadMessageCount.value = Number(messageRes.data?.unreadTotal || 0)
   } catch (error) {
-    console.error('加载关注统计失败:', error)
+    console.error('load mine page failed', error)
   }
 }
 
-// 滚动监听
-const onScroll = (e) => {
-  scrollTop.value = e.detail.scrollTop
-  const wasScrolled = isScrolled.value
-  // 与navbarBg保持一致：scrollTop >= 50 时认为已滚动
-  isScrolled.value = scrollTop.value >= 50
-  
-  // 调试日志（仅App端）
-  // #ifdef APP-PLUS
-  if (wasScrolled !== isScrolled.value) {
-    console.log('滚动状态变化:', {
-      scrollTop: scrollTop.value,
-      isScrolled: isScrolled.value,
-      showNavbarAvatar: showNavbarAvatar.value,
-      navbarBg: navbarBg.value
-    })
+function ensureLogin(next: () => void) {
+  if (!store.state.user.token) {
+    uni.navigateTo({ url: '/pages/login' })
+    return
   }
-  // #endif
-  
-  // Tab吸顶判断 - 当滚动到头部区域底部时
-  // 头部高度约为 600rpx，需要转换为px
-  const headerHeight = 600 * (uni.getSystemInfoSync().windowWidth / 750)
-  isTabFixed.value = scrollTop.value > headerHeight - 100
+  next()
+}
+
+function goProfile() {
+  ensureLogin(() => uni.navigateTo({ url: '/pages_mine/pages/info/edit' }))
+}
+
+function goMessages() {
+  ensureLogin(() => uni.switchTab({ url: '/pages/messages' }))
+}
+
+function goSetting() {
+  ensureLogin(() => uni.navigateTo({ url: '/pages_mine/pages/setting/index' }))
+}
+
+function goScan() {
+  ensureLogin(() => uni.navigateTo({ url: '/pages/qrcode-scan' }))
+}
+
+function goMemberCenter() {
+  ensureLogin(() => uni.navigateTo({ url: '/pages/member-center' }))
+}
+
+function goBadgeCenter() {
+  ensureLogin(() => uni.navigateTo({ url: '/pages/member-badge-center' }))
+}
+
+function goCheckin() {
+  ensureLogin(() => uni.navigateTo({ url: '/pages/member-checkin' }))
+}
+
+function goBalance(tab = 0) {
+  ensureLogin(() => uni.navigateTo({ url: `/pages/member-balance?tab=${tab}` }))
+}
+
+function goMallOrders() {
+  ensureLogin(() => uni.navigateTo({ url: '/pages_mall/pages/order/list' }))
+}
+
+function handleOrderEntry(key: string) {
+  const tabMap: Record<string, number> = { pay: 1, ship: 2, receive: 3, comment: 4, after: 5 }
+  ensureLogin(() => uni.navigateTo({ url: `/pages_mall/pages/order/list?tab=${tabMap[key] ?? 0}` }))
+}
+
+function handleQuickAction(key: string) {
+  const actionMap: Record<string, () => void> = {
+    favorite: () => uni.navigateTo({ url: '/pages/interaction-center?tab=2' }),
+    wallet: () => goBalance(0),
+    service: () => uni.switchTab({ url: '/pages/messages' }),
+    history: () => uni.navigateTo({ url: '/pages/interaction-center?tab=0' }),
+    activity: () => uni.navigateTo({ url: '/pages/member-club' }),
+    task: goCheckin,
+    address: () => uni.navigateTo({ url: '/pages_template/pages/address/index' })
+  }
+  ensureLogin(() => actionMap[key]?.())
 }
 
 onShow(() => {
-  // 确保初始状态正确
-  isScrolled.value = false
-  scrollTop.value = 0
-  
-  // 调试日志（仅App端）
-  // #ifdef APP-PLUS
-  console.log('页面显示:', {
-    isScrolled: isScrolled.value,
-    scrollTop: scrollTop.value,
-    showNavbarAvatar: showNavbarAvatar.value,
-    navbarBg: navbarBg.value
-  })
-  // #endif
-  
-  if (store.state.user.token) {
-    loadData()
-    // 只加载默认Tab（图片）的数据
-    loadCurrentTabData()
-  }
-})
-
-// 下拉刷新
-onPullDownRefresh(() => {
-  // 根据当前Tab刷新对应的数据
-  switch (currentTab.value) {
-    case 0:
-      loadMyImages(true).then(() => uni.stopPullDownRefresh())
-      break
-    case 1:
-      loadMyAlbums(true).then(() => uni.stopPullDownRefresh())
-      break
-    case 2:
-      loadLikedImages(true).then(() => uni.stopPullDownRefresh())
-      break
-    case 3:
-      loadFavoritedImages(true).then(() => uni.stopPullDownRefresh())
-      break
-    default:
-      uni.stopPullDownRefresh()
-  }
-})
-
-// 上拉加载更多
-onReachBottom(() => {
-  // 根据当前Tab加载更多数据
-  switch (currentTab.value) {
-    case 0:
-      loadMyImages(false)
-      break
-    case 1:
-      loadMyAlbums(false)
-      break
-    case 2:
-      loadLikedImages(false)
-      break
-    case 3:
-      loadFavoritedImages(false)
-      break
-  }
-})
-
-// 页面跳转
-const handleToInfo = () => {
-  if (!store.state.user.token) {
-    uni.navigateTo({ url: '/pages/login' })
-    return
-  }
-  // 跳转到编辑资料页面
-  handleToEditInfo()
-}
-
-const handleToEditInfo = () => {
-  uni.navigateTo({ url: '/pages_mine/pages/info/edit' })
-}
-
-// 复制用户ID
-const handleCopyUserId = () => {
-  const userId = userInfo.value?.userId
-  if (!userId) {
-    uni.showToast({ title: '用户ID不存在', icon: 'none' })
-    return
-  }
-  
-  // 复制到剪贴板
-  uni.setClipboardData({
-    data: String(userId),
-    success: () => {
-      uni.showToast({ title: '复制成功', icon: 'success' })
-    },
-    fail: () => {
-      uni.showToast({ title: '复制失败', icon: 'none' })
-    }
-  })
-}
-
-// 头像上传成功
-const handleAvatarSuccess = (data) => {
-  console.log('头像上传成功', data)
-  
-  // 更新store中的用户资料
-  store.dispatch('UpdateUserProfileField', { 
-    field: 'avatar', 
-    value: data.imgUrl 
-  })
-  
-  // 刷新用户信息
   loadData()
-}
-
-// 头像上传失败
-const handleAvatarError = (error) => {
-  console.error('头像上传失败', error)
-}
-
-const handleToSetting = () => {
-  showDrawer.value = false
-  uni.navigateTo({ url: '/pages_mine/pages/setting/index' })
-}
-
-const handleToMemberBalance = (tab) => {
-  uni.navigateTo({ url: `/pages/member-balance?tab=${tab}` })
-}
-
-const handleToBalance = () => {
-  handleToMemberBalance(0)
-}
-
-const handleToPoints = () => {
-  handleToMemberBalance(1)
-}
-
-const handleToMyWorks = () => {
-  uni.showToast({ title: '功能开发中', icon: 'none' })
-}
-
-// 跳转到关注列表
-const handleToFollowing = () => {
-  if (!store.state.user.token) {
-    uni.navigateTo({ url: '/pages/login' })
-    return
-  }
-  uni.navigateTo({ url: '/pages_mine/pages/follow/index?tab=following' })
-}
-
-// 跳转到粉丝列表
-const handleToFollowers = () => {
-  if (!store.state.user.token) {
-    uni.navigateTo({ url: '/pages/login' })
-    return
-  }
-  uni.navigateTo({ url: '/pages_mine/pages/follow/index?tab=followers' })
-}
-
-const handleToFans = () => {
-  handleToFollowers()
-}
-
-const handleToLikes = () => {
-  uni.showToast({ title: '功能开发中', icon: 'none' })
-}
-
-// 跳转到图片详情
-const handleToImageDetail = (imageId) => {
-  uni.navigateTo({ url: `/pages/detail?imageId=${imageId}` })
-}
-
-// 跳转到相册详情
-const handleToAlbumDetail = (albumId) => {
-  uni.showToast({ title: '相册详情功能开发中', icon: 'none' })
-  // TODO: 后续实现相册详情页
-  // uni.navigateTo({ url: `/pages/album-detail?id=${albumId}` })
-}
-
-// 加载我的图片
-const loadMyImages = async (refresh = false) => {
-  if (myImagesPage.value.loading) return
-  if (!refresh && !myImagesPage.value.hasMore) return
-  
-  // 生成新的请求ID
-  const requestId = ++loadingRequestId.value
-  const targetTab = 0
-  
-  try {
-    myImagesPage.value.loading = true
-    
-    // 如果是刷新，重置分页
-    if (refresh) {
-      myImagesPage.value.pageNum = 1
-      myImagesPage.value.hasMore = true
-    }
-    
-    const res = await getMyImages({
-      pageNum: myImagesPage.value.pageNum,
-      pageSize: myImagesPage.value.pageSize
-    })
-    
-    // 验证：只有当前Tab仍然是目标Tab，且请求ID匹配时才更新数据
-    if (currentTab.value !== targetTab || requestId !== loadingRequestId.value) {
-      console.log('请求已过期，忽略结果')
-      return
-    }
-    
-    if (res.code === 200 && res.rows) {
-      const newImages = res.rows.map(item => ({
-        imageId: item.imageId,
-        imageName: item.imageName || '未命名',
-        url: item.url || '/static/images/default-image.jpg',
-        likeCount: item.likeCount || 0,
-        favoriteCount: item.favoriteCount || 0,
-        commentCount: item.commentCount || 0
-      }))
-      
-      if (refresh) {
-        myImages.value = newImages
-      } else {
-        myImages.value = [...myImages.value, ...newImages]
-      }
-      
-      // 判断是否还有更多数据
-      myImagesPage.value.hasMore = newImages.length >= myImagesPage.value.pageSize
-      myImagesPage.value.pageNum++
-      myImagesPage.value.loaded = true
-    }
-  } catch (error) {
-    console.error('加载我的图片失败：', error)
-    uni.showToast({ title: '加载失败', icon: 'none' })
-  } finally {
-    // 只有请求ID匹配时才关闭loading
-    if (requestId === loadingRequestId.value) {
-      myImagesPage.value.loading = false
-    }
-  }
-}
-
-// 加载我的相册
-const loadMyAlbums = async (refresh = false) => {
-  if (myAlbumsPage.value.loading) return
-  if (!refresh && !myAlbumsPage.value.hasMore) return
-  
-  // 生成新的请求ID
-  const requestId = ++loadingRequestId.value
-  const targetTab = 1
-  
-  try {
-    myAlbumsPage.value.loading = true
-    
-    // 如果是刷新，重置分页
-    if (refresh) {
-      myAlbumsPage.value.pageNum = 1
-      myAlbumsPage.value.hasMore = true
-    }
-    
-    const res = await getMyAlbums({
-      pageNum: myAlbumsPage.value.pageNum,
-      pageSize: myAlbumsPage.value.pageSize
-    })
-    
-    // 验证：只有当前Tab仍然是目标Tab，且请求ID匹配时才更新数据
-    if (currentTab.value !== targetTab || requestId !== loadingRequestId.value) {
-      console.log('请求已过期，忽略结果')
-      return
-    }
-    
-    if (res.code === 200 && res.rows) {
-      const newAlbums = res.rows.map(item => ({
-        albumId: item.albumId,
-        albumName: item.albumName || '未命名相册',
-        coverUrl: item.albumCover || '/static/images/default-album.jpg',
-        imageCount: item.imageCount || 0,
-        description: item.description || ''
-      }))
-      
-      if (refresh) {
-        myAlbums.value = newAlbums
-      } else {
-        myAlbums.value = [...myAlbums.value, ...newAlbums]
-      }
-      
-      // 判断是否还有更多数据
-      myAlbumsPage.value.hasMore = newAlbums.length >= myAlbumsPage.value.pageSize
-      myAlbumsPage.value.pageNum++
-      myAlbumsPage.value.loaded = true
-    }
-  } catch (error) {
-    console.error('加载我的相册失败：', error)
-    uni.showToast({ title: '加载失败', icon: 'none' })
-  } finally {
-    // 只有请求ID匹配时才关闭loading
-    if (requestId === loadingRequestId.value) {
-      myAlbumsPage.value.loading = false
-    }
-  }
-}
-
-// 加载点赞过的图片
-const loadLikedImages = async (refresh = false) => {
-  if (likedImagesPage.value.loading) return
-  if (!refresh && !likedImagesPage.value.hasMore) return
-  
-  // 生成新的请求ID
-  const requestId = ++loadingRequestId.value
-  const targetTab = 2
-  
-  try {
-    likedImagesPage.value.loading = true
-    
-    // 如果是刷新，重置分页
-    if (refresh) {
-      likedImagesPage.value.pageNum = 1
-      likedImagesPage.value.hasMore = true
-    }
-    
-    const res = await getLikedImages({
-      pageNum: likedImagesPage.value.pageNum,
-      pageSize: likedImagesPage.value.pageSize
-    })
-    
-    // 验证：只有当前Tab仍然是目标Tab，且请求ID匹配时才更新数据
-    if (currentTab.value !== targetTab || requestId !== loadingRequestId.value) {
-      console.log('请求已过期，忽略结果')
-      return
-    }
-    
-    if (res.code === 200 && res.rows) {
-      const newImages = res.rows.map(item => ({
-        imageId: item.imageId,
-        imageName: item.imageName || '未命名',
-        url: item.url || '/static/images/default-image.jpg',
-        likeCount: item.likeCount || 0,
-        favoriteCount: item.favoriteCount || 0,
-        commentCount: item.commentCount || 0
-      }))
-      
-      if (refresh) {
-        likedImages.value = newImages
-      } else {
-        likedImages.value = [...likedImages.value, ...newImages]
-      }
-      
-      // 判断是否还有更多数据
-      likedImagesPage.value.hasMore = newImages.length >= likedImagesPage.value.pageSize
-      likedImagesPage.value.pageNum++
-      likedImagesPage.value.loaded = true
-    }
-  } catch (error) {
-    console.error('加载点赞图片失败：', error)
-    uni.showToast({ title: '加载失败', icon: 'none' })
-  } finally {
-    // 只有请求ID匹配时才关闭loading
-    if (requestId === loadingRequestId.value) {
-      likedImagesPage.value.loading = false
-    }
-  }
-}
-
-// 加载收藏过的图片
-const loadFavoritedImages = async (refresh = false) => {
-  if (favoritedImagesPage.value.loading) return
-  if (!refresh && !favoritedImagesPage.value.hasMore) return
-  
-  // 生成新的请求ID
-  const requestId = ++loadingRequestId.value
-  const targetTab = 3
-  
-  try {
-    favoritedImagesPage.value.loading = true
-    
-    // 如果是刷新，重置分页
-    if (refresh) {
-      favoritedImagesPage.value.pageNum = 1
-      favoritedImagesPage.value.hasMore = true
-    }
-    
-    const res = await getFavoritedImages({
-      pageNum: favoritedImagesPage.value.pageNum,
-      pageSize: favoritedImagesPage.value.pageSize
-    })
-    
-    // 验证：只有当前Tab仍然是目标Tab，且请求ID匹配时才更新数据
-    if (currentTab.value !== targetTab || requestId !== loadingRequestId.value) {
-      console.log('请求已过期，忽略结果')
-      return
-    }
-    
-    if (res.code === 200 && res.rows) {
-      const newImages = res.rows.map(item => ({
-        imageId: item.imageId,
-        imageName: item.imageName || '未命名',
-        url: item.url || '/static/images/default-image.jpg',
-        likeCount: item.likeCount || 0,
-        favoriteCount: item.favoriteCount || 0,
-        commentCount: item.commentCount || 0
-      }))
-      
-      if (refresh) {
-        favoritedImages.value = newImages
-      } else {
-        favoritedImages.value = [...favoritedImages.value, ...newImages]
-      }
-      
-      // 判断是否还有更多数据
-      favoritedImagesPage.value.hasMore = newImages.length >= favoritedImagesPage.value.pageSize
-      favoritedImagesPage.value.pageNum++
-      favoritedImagesPage.value.loaded = true
-    }
-  } catch (error) {
-    console.error('加载收藏图片失败：', error)
-    uni.showToast({ title: '加载失败', icon: 'none' })
-  } finally {
-    // 只有请求ID匹配时才关闭loading
-    if (requestId === loadingRequestId.value) {
-      favoritedImagesPage.value.loading = false
-    }
-  }
-}
-
-const handleCheckin = () => {
-  uni.navigateTo({ url: '/pages/member-checkin' })
-}
-
-const handleScan = () => {
-  if (!store.state.user.token) {
-    uni.navigateTo({ url: '/pages/login' })
-    return
-  }
-  uni.navigateTo({ url: '/pages/qrcode-scan' })
-}
-
-// 加载当前Tab的数据
-const loadCurrentTabData = () => {
-  switch (currentTab.value) {
-    case 0:
-      if (!myImagesPage.value.loaded) {
-        loadMyImages(true)
-      }
-      break
-    case 1:
-      if (!myAlbumsPage.value.loaded) {
-        loadMyAlbums(true)
-      }
-      break
-    case 2:
-      if (!likedImagesPage.value.loaded) {
-        loadLikedImages(true)
-      }
-      break
-    case 3:
-      if (!favoritedImagesPage.value.loaded) {
-        loadFavoritedImages(true)
-      }
-      break
-  }
-}
-
-// 监听Tab切换
-const handleTabChange = (index) => {
-  if (currentTab.value === index) return
-  
-  // 切换Tab时，增加请求ID，使之前的请求失效
-  loadingRequestId.value++
-  
-  currentTab.value = index
-  loadCurrentTabData()
-}
-
-
-
-const handleSearch = () => {
-  uni.showToast({ title: '搜索功能开发中', icon: 'none' })
-}
-
-const handleHelp = () => {
-  showDrawer.value = false
-  uni.showToast({ title: '帮助功能开发中', icon: 'none' })
-}
-
-// 抽屉菜单项点击
-const handleDrawerItem = (type) => {
-  showDrawer.value = false
-  
-  const actions = {
-    friend: () => uni.showToast({ title: '添加好友功能开发中', icon: 'none' }),
-    creator: () => uni.showToast({ title: '创作者中心功能开发中', icon: 'none' }),
-    draft: () => uni.showToast({ title: '草稿功能开发中', icon: 'none' }),
-    history: () => uni.showToast({ title: '浏览记录功能开发中', icon: 'none' }),
-    download: () => uni.showToast({ title: '下载功能开发中', icon: 'none' }),
-    order: () => uni.showToast({ title: '订单功能开发中', icon: 'none' }),
-    cart: () => uni.showToast({ title: '购物车功能开发中', icon: 'none' }),
-    wallet: () => handleToBalance(),
-    miniapp: () => uni.showToast({ title: '小程序功能开发中', icon: 'none' }),
-    community: () => uni.showToast({ title: '社区公约功能开发中', icon: 'none' })
-  }
-  
-  actions[type]?.()
-}
+})
 </script>
 
 <style lang="scss" scoped>
 .mine-page {
-  width: 100%;
-  height: 100vh;
-  background: #f5f5f5;
+  min-height: 100vh;
+  background: #f5f8ff;
+}
+
+.page-scroll {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f5f8ff 0%, #f5f8ff 100%);
+}
+
+:deep(.u-navbar) {
+  background: transparent !important;
+}
+
+:deep(.u-navbar__content) {
+  background: transparent !important;
+}
+
+:deep(.u-navbar__content__left),
+:deep(.u-navbar__content__right) {
+  padding: 0 24rpx;
+}
+
+.nav-left {
   position: relative;
 }
 
-// 页面加载遮罩
-.page-loading-mask {
-  position: fixed;
-  top: 0;
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.nav-icon {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 22rpx;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 12rpx 30rpx rgba(109, 96, 92, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-wrap {
+  padding: 16rpx 24rpx 0;
+}
+
+.hero-panel {
+  padding: 6rpx 0 0;
+}
+
+.profile-row {
+  display: flex;
+  align-items: center;
+}
+
+.avatar {
+  width: 108rpx;
+  height: 108rpx;
+  border-radius: 54rpx;
+  background: #ffffff;
+  flex-shrink: 0;
+}
+
+.profile-main {
+  flex: 1;
+  min-width: 0;
+  margin-left: 18rpx;
+}
+
+.nickname {
+  font-size: 38rpx;
+  font-weight: 700;
+  color: #40302d;
+}
+
+.nickname-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.nickname-badge {
+  width: 42rpx;
+  height: 42rpx;
+  flex-shrink: 0;
+}
+
+.account {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: #6f605d;
+}
+
+.profile-link {
+  font-size: 24rpx;
+  color: #8b7f7b;
+  white-space: nowrap;
+}
+
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8rpx;
+  margin-top: 30rpx;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-value {
+  display: block;
+  font-size: 40rpx;
+  font-weight: 600;
+  color: #2f2928;
+}
+
+.stat-label {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: #7d7270;
+}
+
+.vip-card {
+  position: relative;
+  margin-top: 28rpx;
+  height: 340rpx;
+  border-radius: 28rpx;
+  overflow: hidden;
+}
+
+.vip-card__bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.vip-card__mask {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.08) 100%);
+}
+
+.vip-card__inner {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 22rpx 22rpx 18rpx 26rpx;
+}
+
+.vip-card__left {
+  flex: 1;
+  min-width: 0;
+  padding-top: 6rpx;
+}
+
+.vip-card__tag {
+  display: inline-flex;
+  align-items: center;
+  height: 36rpx;
+  padding: 0 14rpx;
+  border-radius: 999rpx;
+  background: rgba(94, 86, 70, 0.34);
+  color: #ffffff;
+  font-size: 18rpx;
+}
+
+.vip-card__title {
+  display: block;
+  margin-top: 16rpx;
+  font-size: 60rpx;
+  line-height: 1;
+  font-weight: 800;
+  color: #4e371f;
+}
+
+.vip-card__desc {
+  display: block;
+  margin-top: 16rpx;
+  font-size: 24rpx;
+  color: rgba(108, 83, 49, 0.84);
+  line-height: 1.5;
+}
+
+.vip-card__action {
+  width: 144rpx;
+  height: 58rpx;
+  border-radius: 999rpx;
+  background: #33333f;
+  color: #ffffff;
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vip-card__progress {
+  position: relative;
+  margin-top: 30rpx;
+  width: 400rpx;
+  height: 20rpx;
+}
+
+.vip-card__progress-track {
+  position: absolute;
+  inset: 0;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: inset 0 0 0 1rpx rgba(137, 109, 61, 0.14);
+}
+
+.vip-card__progress-fill {
+  position: absolute;
   left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.95);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  
-  .loading-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20rpx;
-    
-    .loading-spinner-large {
-      width: 60rpx;
-      height: 60rpx;
-      border: 4rpx solid #f3f3f3;
-      border-top: 4rpx solid #000;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-    
-    .loading-text {
-      font-size: 28rpx;
-      color: #666;
-    }
-  }
+  top: 0;
+  height: 20rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(90deg, #b89a56 0%, #f0db93 100%);
+  box-shadow: 0 6rpx 14rpx rgba(184, 154, 86, 0.24);
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-// 新增：u-navbar按钮样式
-.navbar-btn {
-  width: 60rpx;
-  height: 60rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.vip-card__progress-dot {
+  position: absolute;
+  top: 50%;
+  width: 24rpx;
+  height: 24rpx;
+  margin-left: -12rpx;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(10px);
-  transition: all 0.2s;
-  
-  &:active {
-    transform: scale(0.95);
-    opacity: 0.8;
-  }
+  background: #fff8e7;
+  border: 4rpx solid #cfb16d;
+  box-shadow: 0 6rpx 16rpx rgba(184, 154, 86, 0.3);
+  transform: translateY(-50%);
 }
 
-// 新增：导航栏头像样式
-.navbar-avatar {
+.vip-card__foot {
   display: flex;
-  justify-content: center;
-  
-  .avatar-img {
-    width: 60rpx;
-    height: 60rpx;
-    border-radius: 50%;
-    border: 2rpx solid #fff;
-  }
-}
-
-// 滚动内容
-.scroll-content {
-  width: 100%;
-}
-
-// 头部区域
-.header-section {
-  position: relative;
-  //min-height: 600rpx;
-  background: linear-gradient(180deg, #2C5F5D 0%, #1F3A3D 100%);
-  padding-top: 40rpx;  // 统一使用较小的padding
-  padding-left: 30rpx;
-  padding-right: 30rpx;
-  padding-bottom: 30rpx;
-  
-  .bg-image {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0.3;
-    filter: blur(60rpx);
-  }
-  
-  .bg-mask {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.2);
-  }
-  
-  .user-info {
-    position: relative;
-    z-index: 2;
-    
-    .avatar-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 20rpx;
-      
-      // AvatarUpload组件样式
-      .avatar-upload {
-        width: 140rpx !important;
-        height: 140rpx !important;
-        
-        .avatar-wrapper {
-          width: 140rpx !important;
-          height: 140rpx !important;
-          
-          .avatar-image {
-            width: 140rpx !important;
-            height: 140rpx !important;
-            border: 4rpx solid rgba(255,255,255,0.2);
-          }
-          
-          .camera-icon {
-            background: #FFD600;
-          }
-        }
-      }
-      
-      .checkin-btn {
-        background: rgba(255,255,255,0.25);
-        backdrop-filter: blur(10px);
-        border-radius: 40rpx;
-        padding: 12rpx 24rpx;
-        display: flex;
-        align-items: center;
-        
-        .u-icon {
-          margin-right: 8rpx;
-        }
-        
-        text {
-          font-size: 24rpx;
-          color: #fff;
-        }
-        
-        &.signed {
-          background: rgba(212, 176, 123, 0.3);
-          
-          text {
-            color: #D4B07B;
-          }
-        }
-      }
-    }
-    
-    .nickname {
-      font-size: 48rpx;
-      font-weight: bold;
-      color: #fff;
-      margin-bottom: 8rpx;
-    }
-    
-    .user-id {
-      font-size: 24rpx;
-      color: rgba(255,255,255,0.7);
-      margin-bottom: 16rpx;
-    }
-    
-    .bio {
-      font-size: 26rpx;
-      color: rgba(255,255,255,0.9);
-      margin-bottom: 20rpx;
-    }
-    
-    .member-strip {
-      position: relative;
-      z-index: 2;
-      display: flex;
-      justify-content: space-between;
-      margin-top: 8rpx;
-      margin-bottom: 24rpx;
-      padding: 20rpx 16rpx;
-      background: rgba(255, 255, 255, 0.12);
-      border-radius: 16rpx;
-      backdrop-filter: blur(8px);
-    }
-    
-    .strip-item {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6rpx;
-    }
-    
-    .strip-val {
-      font-size: 26rpx;
-      font-weight: 600;
-      color: #fff;
-    }
-    
-    .strip-label {
-      font-size: 22rpx;
-      color: rgba(255, 255, 255, 0.75);
-    }
-  }
-  
-  .stats {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    margin-bottom: 30rpx;
-    
-    .stat-item {
-      display: flex;
-      align-items: baseline;
-      margin-right: 40rpx;
-      
-      &:last-child {
-        margin-right: 0;
-      }
-      
-      .num {
-        font-size: 32rpx;
-        font-weight: bold;
-        color: #fff;
-        margin-right: 8rpx;
-      }
-      
-      .label {
-        font-size: 26rpx;
-        color: rgba(255,255,255,0.8);
-      }
-    }
-  }
-  
-  .action-btns {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    
-    .edit-btn {
-      flex: 1;
-      background: rgba(255,255,255,0.25);
-      backdrop-filter: blur(10px);
-      border-radius: 12rpx;
-      height: 64rpx;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-right: 16rpx;
-      
-      text {
-        font-size: 26rpx;
-        color: #fff;
-      }
-    }
-    
-    .setting-btn {
-      width: 64rpx;
-      height: 64rpx;
-      background: rgba(255,255,255,0.25);
-      backdrop-filter: blur(10px);
-      border-radius: 12rpx;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-  }
-}
-
-// Tab标签
-.tabs-wrapper {
-  background: #fff;
-  display: flex;
+  justify-content: space-between;
   align-items: center;
-  padding: 20rpx 30rpx;
-  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); // 添加平滑过渡动画
-  
-  &.fixed {
-    position: fixed;
-    left: 0;
-    right: 0;
-    z-index: 998;
-    box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.06);
-    animation: slideDown 0.3s ease-out; // 添加下滑动画
-    /* #ifdef MP */
-    top: 0;
-    /* #endif */
-    /* #ifndef MP */
-    top: 0;
-    /* #endif */
-  }
-  
-  .tabs {
-    flex: 1;
-    display: flex;
-    
-    .tab-item {
-      position: relative;
-      padding-bottom: 16rpx;
-      margin-right: 48rpx;
-      transition: all 0.2s; // 添加Tab切换动画
-      
-      &:last-child {
-        margin-right: 0;
-      }
-      
-      text {
-        font-size: 28rpx;
-        color: #999;
-        transition: color 0.2s, font-weight 0.2s;
-      }
-      
-      &.active {
-        text {
-          color: #333;
-          font-weight: bold;
-        }
-        
-        .line {
-          position: absolute;
-          bottom: 0;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 32rpx;
-          height: 6rpx;
-          background: #333;
-          border-radius: 3rpx;
-          animation: lineExpand 0.3s ease-out; // 添加下划线展开动画
-        }
-      }
-    }
-  }
-  
-  .search-icon {
-    width: 56rpx;
-    height: 56rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+  line-height: 20px;
+  width: 400rpx;
+  gap: 20rpx;
+  margin-top: 16rpx;
+  font-size: 22rpx;
+  color: rgba(102, 83, 53, 0.7);
 }
 
-// Tab吸顶下滑动画
-@keyframes slideDown {
-  from {
-    transform: translateY(-100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-// Tab下划线展开动画
-@keyframes lineExpand {
-  from {
-    width: 0;
-  }
-  to {
-    width: 32rpx;
-  }
-}
-
-// 内容区域
-.content-area {
-  background: #f7f7f7;
-  min-height: 400rpx;
-  padding: 20rpx 0;
-  
-  .tab-content {
-    min-height: 400rpx;
-    overflow: hidden; // 防止内容溢出
-  }
-  
-  // 空状态
-  .empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 120rpx 0;
-    
-    .empty-icon {
-      font-size: 100rpx;
-      margin-bottom: 20rpx;
-    }
-    
-    .empty-text {
-      font-size: 28rpx;
-      color: #999;
-    }
-  }
-  
-  // 加载中状态
-  .loading-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 120rpx 0;
-    
-    .loading-spinner {
-      width: 80rpx;
-      height: 80rpx;
-      border: 4rpx solid #f3f3f3;
-      border-top: 4rpx solid #333;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-    
-    .loading-text {
-      font-size: 28rpx;
-      color: #999;
-      margin-top: 20rpx;
-    }
-  }
-  
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-  
-  // 瀑布流容器
-  .waterfall-container {
-    display: flex;
-    padding: 0 16rpx;
-    gap: 12rpx;
-    width: 100%;
-    box-sizing: border-box;
-    
-    .waterfall-column {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      min-width: 0; // 防止flex子项溢出
-      
-      .waterfall-item {
-        background: #fff;
-        border-radius: 12rpx;
-        overflow: hidden;
-        margin-bottom: 12rpx;
-        width: 100%;
-        
-        .item-image {
-          width: 100%;
-          display: block;
-        }
-        
-        .item-info {
-          padding: 12rpx;
-          
-          .item-title {
-            font-size: 26rpx;
-            color: #333;
-            display: -webkit-box;
-            -webkit-box-orient: vertical;
-            -webkit-line-clamp: 2;
-            overflow: hidden;
-            line-height: 1.4;
-            margin-bottom: 8rpx;
-            word-break: break-all; // 强制换行
-          }
-          
-          .item-meta {
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            
-            .like-info {
-              display: flex;
-              align-items: center;
-              gap: 4rpx;
-              font-size: 22rpx;
-              color: #999;
-            }
-          }
-        }
-      }
-    }
-  }
-  
-  // 加载提示
-  .load-tip {
-    padding: 30rpx 0;
-    text-align: center;
-    
-    text {
-      font-size: 24rpx;
-      color: #999;
-    }
-  }
-  
-  // 相册网格
-  .album-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 16rpx;
-    padding: 0 20rpx;
-    width: 100%;
-    box-sizing: border-box;
-    
-    .album-card {
-      background: #fff;
-      border-radius: 16rpx;
-      overflow: hidden;
-      width: 100%;
-      
-      .album-cover {
-        width: 100%;
-        height: 300rpx;
-      }
-      
-      .album-info {
-        padding: 16rpx;
-        
-        .album-title {
-          font-size: 28rpx;
-          color: #333;
-          font-weight: 500;
-          display: -webkit-box;
-          -webkit-box-orient: vertical;
-          -webkit-line-clamp: 1;
-          overflow: hidden;
-          margin-bottom: 8rpx;
-          word-break: break-all; // 强制换行
-        }
-        
-        .album-count {
-          font-size: 24rpx;
-          color: #999;
-        }
-      }
-    }
-  }
-  
-  .footer-tip {
-    padding: 40rpx 0 60rpx;
-    text-align: center;
-    
-    text {
-      font-size: 24rpx;
-      color: #ccc;
-    }
-  }
-}
-
-// 抽屉
-.drawer-mask {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0,0,0,0.5);
-  z-index: 1000;
-}
-
-.drawer {
-  position: fixed;
-  top: 0;
-  left: -680rpx;
-  bottom: 0;
-  width: 680rpx;
-  background: #f7f7f7;
-  z-index: 1001;
-  transition: left 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+.vip-card__right {
+  width: 212rpx;
   display: flex;
   flex-direction: column;
-  
-  &.show {
-    left: 0;
-  }
-  
-  .drawer-scroll {
-    flex: 1;
-    padding: 60rpx 0 20rpx;
-    background: #f7f7f7;
-  }
-  
-  .drawer-footer {
-    display: flex;
-    padding: 20rpx 40rpx 40rpx;
-    background: #f7f7f7;
-    border-top: 1rpx solid #e5e5e5;
-    
-    .footer-btn {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 24rpx;
-      background: #fff;
-      border-radius: 16rpx;
-      transition: all 0.15s;
-      margin-right: 24rpx;
-      
-      &:last-child {
-        margin-right: 0;
-      }
-      
-      image, .u-icon {
-        margin-bottom: 12rpx;
-      }
-      
-      &:active {
-        background: #f7f7f7;
-        transform: scale(0.98);
-      }
-      
-      text {
-        font-size: 26rpx;
-        color: #666;
-      }
-    }
-  }
+  align-items: center;
+  justify-content: center;
+  margin-top: -80rpx;
 }
 
-// 动画
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 0.3s;
+.vip-card__medal {
+  width: 272rpx;
+  height: 272rpx;
 }
-.fade-enter-from, .fade-leave-to {
-  opacity: 0;
+
+.content-wrap {
+  padding: 0 26rpx 0 26rpx;
+}
+
+.section-card {
+  margin-top: 22rpx;
+  padding: 28rpx 24rpx;
+  border-radius: 30rpx;
+  background: #ffffff;
+  box-shadow: 0 10rpx 22rpx rgba(210, 220, 241, 0.44);
+}
+
+.section-card--tools {
+  padding-bottom: 10rpx;
+}
+
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #2c2422;
+}
+
+.section-link {
+  font-size: 24rpx;
+  color: #9aa3af;
+}
+
+.order-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12rpx;
+  margin-top: 30rpx;
+}
+
+.order-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.order-item__icon {
+  position: relative;
+  width: 76rpx;
+  height: 76rpx;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #eef4ff 0%, #dfe9ff 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.order-item__name {
+  margin-top: 14rpx;
+  font-size: 24rpx;
+  color: #706563;
+}
+
+.checkin-card {
+  margin-top: 22rpx;
+  padding: 0 28rpx;
+  min-height: 126rpx;
+  border-radius: 28rpx;
+  background: linear-gradient(90deg, #eef4ff 0%, #dfe8ff 100%);
+  box-shadow: 0 10rpx 22rpx rgba(210, 220, 241, 0.42);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rpx;
+}
+
+.checkin-card__main {
+  flex: 1;
+}
+
+.checkin-card__title {
+  display: block;
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #3553a4;
+}
+
+.checkin-card__desc {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: #7d89a6;
+}
+
+.checkin-card__btn {
+  min-width: 148rpx;
+  height: 64rpx;
+  padding: 0 20rpx;
+  border-radius: 999rpx;
+  background: #5d8fff;
+  color: #ffffff;
+  font-size: 26rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  row-gap: 28rpx;
+  margin-top: 28rpx;
+}
+
+.tool-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tool-item__icon {
+  width: 76rpx;
+  height: 76rpx;
+  border-radius: 50%;
+  background: #f4f7ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wallet-icon {
+  position: relative;
+  width: 36rpx;
+  height: 28rpx;
+}
+
+.wallet-icon__body {
+  position: absolute;
+  left: 2rpx;
+  right: 0;
+  bottom: 0;
+  height: 24rpx;
+  border-radius: 10rpx;
+  background: linear-gradient(180deg, #7aa6ff 0%, #4d83f6 100%);
+  box-shadow: 0 6rpx 12rpx rgba(93, 143, 255, 0.18);
+}
+
+.wallet-icon__slot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 18rpx;
+  height: 10rpx;
+  border-radius: 8rpx 8rpx 0 0;
+  background: #a9c4ff;
+}
+
+.wallet-icon__dot {
+  position: absolute;
+  right: 8rpx;
+  top: 12rpx;
+  width: 6rpx;
+  height: 6rpx;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+.tool-item__name {
+  margin-top: 14rpx;
+  font-size: 24rpx;
+  color: #473f3d;
 }
 </style>

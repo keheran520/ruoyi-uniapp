@@ -1,0 +1,57 @@
+<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="80.000000" height="80.000000" fill="none" customFrame="#000000">
+	<mask id="mask_10" width="73.000000" height="73.000000" x="3.000000" y="3.000000" maskUnits="userSpaceOnUse">
+		<g filter="url(#pixso_custom_mask_type_outline)">
+			<rect id="收藏、喜欢" width="73.000000" height="73.000000" x="3.000000" y="3.000000" fill="rgb(255,255,255)" />
+		</g>
+	</mask>
+	<defs>
+		<filter id="pixso_custom_mask_type_outline">
+			<feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0 " />
+		</filter>
+		<g id="pixso_custom_effect_2">
+			<effect x="0.000000" y="0.000000" visibility="visible" fill="rgb(255,255,255)" fill-opacity="0.800000012" effectType="innerShadow" stdDeviation="6" radius="0" />
+		</g>
+		<filter id="filter_2" width="73.000000" height="40.149902" x="3.000000" y="35.498047" filterUnits="userSpaceOnUse" customEffect="url(#pixso_custom_effect_2)" color-interpolation-filters="sRGB">
+			<feFlood flood-opacity="0" result="BackgroundImageFix" />
+			<feBlend result="shape" in="SourceGraphic" in2="BackgroundImageFix" mode="normal" />
+			<feOffset dx="0.000000" dy="0.000000" in="SourceAlpha" />
+			<feGaussianBlur stdDeviation="2" />
+			<feComposite k2="-1" k3="1" in2="SourceAlpha" operator="arithmetic" />
+			<feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.8 0 " />
+			<feBlend result="effect_innerShadow_1" in2="shape" mode="normal" />
+		</filter>
+		<linearGradient id="paint_linear_12" x1="3" x2="3" y1="35.4980469" y2="75.6479492" gradientUnits="userSpaceOnUse">
+			<stop stop-color="rgb(255,227,238)" offset="0" stop-opacity="1" />
+			<stop stop-color="rgb(255,240,246)" offset="1" stop-opacity="1" />
+		</linearGradient>
+		<linearGradient id="paint_linear_13" x1="-7.26355362" x2="21.0440884" y1="16.5533371" y2="67.1090012" gradientUnits="userSpaceOnUse">
+			<stop stop-color="rgb(235,124,167)" offset="0" stop-opacity="1" />
+			<stop stop-color="rgb(255,112,176)" offset="0.0102564003" stop-opacity="1" />
+			<stop stop-color="rgb(255,85,132)" offset="1" stop-opacity="1" />
+		</linearGradient>
+	</defs>
+	<mask id="mask_9" width="80.000000" height="80.000000" x="0.000000" y="0.000000" maskUnits="userSpaceOnUse">
+		<g filter="url(#pixso_custom_mask_type_outline)">
+			<rect id="喜欢80x80" width="80.000000" height="80.000000" x="0.000000" y="0.000000" fill="rgb(255,255,255)" />
+		</g>
+	</mask>
+	<g id="喜欢80x80" showMaskRef="url(#show_mask_9)" mask="url(#mask_9)">
+		<rect id="show_mask_9" width="80.000000" height="80.000000" x="0.000000" y="0.000000" fill="rgb(255,255,255)" fill-opacity="0.00392156886" />
+		<path id="路径" d="M0 0L80 0L80 80L0 80L0 0Z" fill-rule="evenodd" />
+		<g id="收藏、喜欢" showMaskRef="url(#show_mask_10)" mask="url(#mask_10)">
+			<rect id="show_mask_10" width="73.000000" height="73.000000" x="3.000000" y="3.000000" fill="rgb(255,255,255)" fill-opacity="0.00392156886" />
+			<path id="路径" d="M3 3L76 3L76 76L3 76L3 3Z" fill-rule="evenodd" />
+			<g filter="url(#filter_2)">
+				<path id="路径 118133" d="M39.5 75.6479C29.7506 75.6479 20.5847 73.5598 13.6907 69.7679C10.3386 67.9243 7.70678 65.7774 5.86838 63.3869C3.96507 60.912 3 58.283 3 55.5729C3 52.8629 3.96507 50.2339 5.86838 47.759C7.70678 45.3685 10.3386 43.2216 13.6907 41.378C20.5847 37.5862 29.7506 35.498 39.5 35.498C49.2494 35.498 58.4153 37.5862 65.3093 41.378C68.6615 43.2216 71.2932 45.3685 73.1317 47.759C75.035 50.2339 76 52.8629 76 55.5729C76 58.283 75.035 60.912 73.1317 63.3869C71.2932 65.7774 68.6615 67.9243 65.3093 69.7679C58.4153 73.5598 49.2494 75.6479 39.5 75.6479ZM16.9554 58.7424C16.9554 53.4989 27.0689 49.2331 39.5 49.2331C51.9306 49.2331 62.0437 53.4989 62.0437 58.7424C62.0437 63.9858 51.9306 68.2516 39.5 68.2516C27.0689 68.2516 16.9554 63.9858 16.9554 58.7424Z" fill="url(#paint_linear_12)" fill-rule="evenodd" />
+			</g>
+			<path id="路径" d="M3.12981 57.4432L3.12928 57.4397C3.0435 56.8724 3 56.2936 3 55.7193C3 52.9891 3.96513 50.3411 5.86856 47.8486C7.70627 45.4405 10.338 43.2778 13.6907 41.4205C20.5846 37.6013 29.7505 35.498 39.5 35.498C49.2485 35.498 58.4144 37.6013 65.3093 41.4205C68.661 43.2778 71.2927 45.4405 73.1314 47.8486C75.0348 50.3411 75.9999 52.9891 75.9999 55.7193L75.9999 55.7415L75.9998 55.7527C70.6461 47.4576 56.1942 41.8841 40.0362 41.8841C31.4131 41.8841 23.279 43.4139 16.5134 46.3082C9.95455 49.114 5.20202 53.0674 3.13132 57.44L3.12981 57.4432Z" fill="rgb(255,255,255)" fill-rule="evenodd" />
+			<path id="路径" d="M42.3212 57.9367C68.935 42.7861 69.664 27.3928 68.7167 21.4187C67.5419 14.0125 62.141 8.14453 55.2758 6.8186C49.497 5.70288 43.9316 8.03711 39.9433 13.1169C35.8954 8.08203 30.3002 5.81372 24.537 6.99487C17.6879 8.40112 12.3539 14.3291 11.2655 21.7485C10.3846 27.7607 11.309 43.2556 38.4472 58.1579C38.4472 58.1579 40.663 59.0591 42.3212 57.9367Z" fill="rgb(255,59,122)" fill-rule="evenodd" />
+			<path id="路径" d="M42.3212 54.7453C68.935 39.5947 69.664 24.2014 68.7167 18.2273C67.5419 10.821 62.141 4.95313 55.2758 3.6272C49.497 2.51147 43.9316 4.84571 39.9433 9.92554C35.8954 4.89063 30.3002 2.62231 24.537 3.80347C17.6879 5.20972 12.3539 11.1377 11.2655 18.5571C10.3846 24.5693 11.309 40.0642 38.4472 54.9665C38.4472 54.9665 40.663 55.8677 42.3212 54.7453Z" fill="url(#paint_linear_13)" fill-rule="evenodd" />
+			<path id="路径" d="M41.3856 44.4659C57.2343 35.4444 57.6679 26.2778 57.1039 22.7197C56.4047 18.3091 53.1879 14.8157 49.1005 14.0254C45.6601 13.3613 42.3446 14.7517 39.9701 17.7766C37.5595 14.7776 34.2284 13.4277 30.7967 14.1309C26.7176 14.9675 23.5409 18.4985 22.8929 22.916C22.368 26.4963 22.9183 35.7236 39.079 44.5979C39.079 44.5979 40.3983 45.134 41.3856 44.4659Z" fill="rgb(246,203,222)" fill-rule="evenodd" />
+			<path id="路径" d="M39.0789 44.5968C35.8199 42.8073 33.1949 41.0028 31.0864 39.2338L48.1769 13.8955C48.483 13.9223 48.7913 13.9653 49.1 14.0249C53.1871 14.8151 56.4046 18.3084 57.1029 22.7193C57.667 26.2768 57.2331 35.4435 41.3844 44.4656C41.006 44.7217 40.5787 44.8006 40.1956 44.8006C39.5801 44.8006 39.0789 44.5968 39.0789 44.5968Z" fill="rgb(247,215,228)" fill-rule="evenodd" />
+			<path id="路径" d="M31.0864 39.2338L48.1769 13.8955C48.483 13.9223 48.7913 13.9653 49.1 14.0249C53.1871 14.8151 56.4046 18.3084 57.1029 22.7193C57.667 26.2768 57.2331 35.4435 41.3844 44.4656C41.006 44.7217 40.5787 44.8006 40.1956 44.8006C39.5801 44.8006 39.0789 44.5968 39.0789 44.5968C35.8199 42.8073 33.1949 41.0028 31.0864 39.2338Z" fill-rule="evenodd" stroke="rgb(0,0,0)" stroke-opacity="0" stroke-linecap="butt" stroke-dasharray="0 0 " stroke-width="1.000000" />
+			<path id="路径" d="M3 3L76 3L76 76L3 76L3 3Z" fill-rule="evenodd" />
+		</g>
+		<path id="路径" d="M0 0L80 0L80 80L0 80L0 0Z" fill-rule="evenodd" />
+	</g>
+</svg>

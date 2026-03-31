@@ -1,0 +1,11 @@
+<svg viewBox="0 0 169.5 82.5" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="169.500000" height="82.500000" fill="none" customFrame="#000000">
+	<defs>
+		<linearGradient id="paint_linear_1" x1="0.75" x2="0.75" y1="0.75" y2="81.75" gradientUnits="userSpaceOnUse">
+			<stop stop-color="rgb(242,247,255)" offset="0" stop-opacity="1" />
+			<stop stop-color="rgb(255,255,255)" offset="0.428373009" stop-opacity="1" />
+			<stop stop-color="rgb(255,255,255)" offset="1" stop-opacity="1" />
+		</linearGradient>
+	</defs>
+	<path id="路径" d="M14.75 0.75L85.395 0.75C93.657 0.75 101.592 3.97763 107.505 9.74339C113.419 15.5092 121.353 18.7368 129.616 18.7368L154.75 18.7368C162.482 18.7368 168.75 25.0002 168.75 32.7265L168.75 67.7603C168.75 75.4866 162.482 81.75 154.75 81.75L14.75 81.75C7.018 81.75 0.75 75.4866 0.75 67.7603L0.75 14.7397C0.75 7.0134 7.018 0.75 14.75 0.75Z" fill="url(#paint_linear_1)" fill-rule="evenodd" />
+	<path id="路径" d="M85.395 0.75C93.657 0.75 101.592 3.97763 107.505 9.74339C113.419 15.5092 121.353 18.7368 129.616 18.7368L154.75 18.7368C162.482 18.7368 168.75 25.0002 168.75 32.7265L168.75 67.7603C168.75 75.4866 162.482 81.75 154.75 81.75L14.75 81.75C7.018 81.75 0.75 75.4866 0.75 67.7603L0.75 14.7397C0.75 7.0134 7.018 0.75 14.75 0.75L85.395 0.75Z" fill-rule="evenodd" stroke="rgb(255,255,255)" stroke-linecap="butt" stroke-dasharray="0 0 " stroke-width="1.500000" />
+</svg>

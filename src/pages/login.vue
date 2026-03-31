@@ -622,13 +622,13 @@ function loginSuccess(result) {
     return store.dispatch('GetUserProfile')
   }).then(() => {
     uni.switchTab({
-      url: '/pages/index'
+      url: '/pages/esports-home'
     });
   }).catch(error => {
     console.error('获取用户信息失败:', error)
     // 即使获取用户资料失败，也允许进入首页
     uni.switchTab({
-      url: '/pages/index'
+      url: '/pages/esports-home'
     });
   })
 }

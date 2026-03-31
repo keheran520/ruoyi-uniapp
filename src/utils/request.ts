@@ -40,9 +40,11 @@ const request = <T>(config: RequestConfig):Promise<ResponseData<T>> => {
       config.data = typeof config.data === 'object' ? encryptWithAes(JSON.stringify(config.data), aesKey) : encryptWithAes(config.data, aesKey);
     }
   }
+  const requestMethod = String(config.method || 'GET').toUpperCase() as UniApp.RequestOptions['method']
+
   return new Promise((resolve, reject) => {
     uni.request({
-      method: config.method || 'GET',
+      method: requestMethod,
       timeout: config.timeout || timeout,
       url: config.baseUrl || baseUrl + config.url,
       data: config.data,

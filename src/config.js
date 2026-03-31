@@ -4,6 +4,7 @@ const config = {
    //cloud后台网关地址
    // baseUrl: 'http://localhost:8080',
    baseUrl: 'http://10.10.167.232:8080',
+   // baseUrl: 'http://api.wujies.cn/tc/v1/prod/',
    clientID: '428a8310cd442757ae699df5d894f051',
    // 应用信息
    appInfo: {

@@ -1,19 +1,17 @@
 {
-    "compilerOptions": {
-        "strict": true,
-        "forceConsistentCasingInFileNames":true,
-        "outDir": "dist/compiled",
-        "allowJs": true,
-        "lib": ["es2017"],
-        "baseUrl": "./",
-        "paths": {
-            "@": [
-                "src"
-            ],
-            "@/*": [
-                "src/*"
-            ],
-            "vue": ["node_modules/vue"]
-        },
+  "compilerOptions": {
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "outDir": "dist/compiled",
+    "allowJs": true,
+    "esModuleInterop": true,
+    "lib": ["es2017", "dom"],
+    "baseUrl": "./",
+    "paths": {
+      "@": ["src"],
+      "@/*": ["src/*"],
+      "vue": ["node_modules/vue"]
     }
+  }
 }

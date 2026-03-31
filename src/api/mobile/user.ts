@@ -1,8 +1,5 @@
 import request from '@/utils/request'
 
-/**
- * 获取当前登录用户资料
- */
 export function getUserProfile() {
   return request({
     url: '/mobile/user/profile',
@@ -10,10 +7,6 @@ export function getUserProfile() {
   })
 }
 
-/**
- * 获取指定用户信息（用于查看他人主页）
- * @param userId 用户ID
- */
 export function getUserInfo(userId: string | number) {
   return request({
     url: `/mobile/user/info/${userId}`,
@@ -21,22 +14,14 @@ export function getUserInfo(userId: string | number) {
   })
 }
 
-/**
- * 更新用户资料
- * @param data 用户资料数据
- */
 export function updateUserProfile(data: any) {
   return request({
     url: '/mobile/user/profile',
     method: 'PUT',
-    data: data
+    data
   })
 }
 
-/**
- * 上传头像
- * @param file 头像文件
- */
 export function uploadAvatar(file: any) {
   const formData = new FormData()
   formData.append('avatarfile', file)
@@ -50,10 +35,6 @@ export function uploadAvatar(file: any) {
   })
 }
 
-/**
- * 更新头像
- * @param avatar 头像ossId
- */
 export function updateAvatar(avatar: any) {
   return request({
     url: '/mobile/user/avatar',
@@ -62,10 +43,6 @@ export function updateAvatar(avatar: any) {
   })
 }
 
-/**
- * 更新昵称
- * @param nickName 昵称
- */
 export function updateNickName(nickName: any) {
   return request({
     url: '/mobile/user/nickName',
@@ -74,10 +51,6 @@ export function updateNickName(nickName: any) {
   })
 }
 
-/**
- * 更新性别
- * @param sex 性别
- */
 export function updateSex(sex: any) {
   return request({
     url: '/mobile/user/sex',
@@ -86,10 +59,6 @@ export function updateSex(sex: any) {
   })
 }
 
-/**
- * 更新生日
- * @param birthday 生日
- */
 export function updateBirthday(birthday: any) {
   return request({
     url: '/mobile/user/birthday',
@@ -98,10 +67,6 @@ export function updateBirthday(birthday: any) {
   })
 }
 
-/**
- * 更新简介
- * @param signature 简介
- */
 export function updateSignature(signature: any) {
   return request({
     url: '/mobile/user/signature',
@@ -110,10 +75,6 @@ export function updateSignature(signature: any) {
   })
 }
 
-/**
- * 更新地区
- * @param region 地区
- */
 export function updateRegion(region: any) {
   return request({
     url: '/mobile/user/region',
@@ -122,10 +83,6 @@ export function updateRegion(region: any) {
   })
 }
 
-/**
- * 更新职业
- * @param occupation 职业
- */
 export function updateOccupation(occupation: any) {
   return request({
     url: '/mobile/user/occupation',
@@ -134,10 +91,6 @@ export function updateOccupation(occupation: any) {
   })
 }
 
-/**
- * 更新学校
- * @param school 学校
- */
 export function updateSchool(school: any) {
   return request({
     url: '/mobile/user/school',

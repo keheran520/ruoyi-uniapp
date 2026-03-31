@@ -1,10 +1,15 @@
 <script>
+import { closeMessageSse, initMessageSse } from '@/utils/sse'
+import { refreshMessageTabBadge } from '@/utils/messageBadge'
+
 export default {
 	globalData: {
 		captchaResult: null // 行为验证码结果
 	},
 	onLaunch: function () {
 		console.log('App Launch')
+		initMessageSse()
+		refreshMessageTabBadge()
 		// this.$socket.connect({ url: "ws://127.0.0.1:8080/websocket" }).then(res => {
 		// 	console.log("success");
 		// 	this.$socket.onMessage(res => {
@@ -21,9 +26,12 @@ export default {
 	},
 	onShow: function () {
 		console.log('App Show')
+		initMessageSse()
+		refreshMessageTabBadge()
 	},
 	onHide: function () {
 		console.log('App Hide')
+		closeMessageSse()
 	}
 }
 </script>

@@ -1,35 +1,26 @@
 import request from '@/utils/request'
 
-/**
- * 绑定第三方账号
- */
-export function authBinding(source, tenantId) {
+export function authBinding(source: string, tenantId: string) {
   return request({
     url: `/auth/binding/${source}`,
-    method: 'get',
+    method: 'GET',
     params: {
-      tenantId: tenantId,
-      domain: window.location?.host || ''
+      tenantId,
+      domain: typeof window !== 'undefined' ? window.location?.host || '' : ''
     }
   })
 }
 
-/**
- * 解绑第三方账号
- */
-export function authUnlock(authId) {
+export function authUnlock(authId: string | number) {
   return request({
     url: `/auth/unlock/${authId}`,
-    method: 'delete'
+    method: 'DELETE'
   })
 }
 
-/**
- * 获取授权列表
- */
 export function getAuthList() {
   return request({
     url: '/system/social/list',
-    method: 'get'
+    method: 'GET'
   })
 }

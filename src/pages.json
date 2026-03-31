@@ -15,296 +15,91 @@
     }
   },
   "pages": [
-    {
-      "path": "pages/index",
-      "style": {
-        "navigationBarTitleText": "首页",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/detail",
-      "style": {
-        "navigationBarTitleText": "详情",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/search",
-      "style": {
-        "navigationBarTitleText": "搜索",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/login",
-      "style": {
-        "navigationBarTitleText": "登录",
-        "navigationStyle": "custom"
-
-      }
-    },
-    {
-      "path": "pages/work",
-      "style": {
-        "navigationBarTitleText": "工作台"
-      }
-    },
-    {
-      "path": "pages/template",
-      "style": {
-        "navigationBarTitleText": "模板"
-      }
-    },
-    {
-      "path": "pages/mine",
-      "style": {
-        "navigationBarTitleText": "我的",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/qrcode-scan",
-      "style": {
-        "navigationBarTitleText": "扫码登录"
-      }
-    },
-    {
-      "path": "pages/member-balance",
-      "style": {
-        "navigationBarTitleText": "会员资产",
-        "enablePullDownRefresh": false,
-        "onReachBottomDistance": 80
-      }
-    },
-    {
-      "path": "pages/member-checkin",
-      "style": {
-        "navigationBarTitleText": "会员签到"
-      }
-    },
-    {
-      "path": "pages/common/webview/index",
-      "style": {
-        "navigationBarTitleText": "浏览网页"
-      }
-    },
-    {
-      "path": "pages/common/textview/index",
-      "style": {
-        "navigationBarTitleText": "浏览文本"
-      }
-    },
-    {
-    	"path" : "pages/common/detail",
-    	"style" : 
-    	{
-    		"navigationBarTitleText" : ""
-    	}
-    }
+    { "path": "pages/esports-home", "style": { "navigationBarTitleText": "Home", "navigationStyle": "custom" } },
+    { "path": "pages/index", "style": { "navigationBarTitleText": "Home", "navigationStyle": "custom" } },
+    { "path": "pages/detail", "style": { "navigationBarTitleText": "Detail", "navigationStyle": "custom" } },
+    { "path": "pages/search", "style": { "navigationBarTitleText": "Search", "navigationStyle": "custom" } },
+    { "path": "pages/login", "style": { "navigationBarTitleText": "Login", "navigationStyle": "custom" } },
+    { "path": "pages/work", "style": { "navigationBarTitleText": "Workspace" } },
+    { "path": "pages/template", "style": { "navigationBarTitleText": "Template" } },
+    { "path": "pages/mine", "style": { "navigationBarTitleText": "Mine", "navigationStyle": "custom" } },
+    { "path": "pages/qrcode-scan", "style": { "navigationBarTitleText": "QR Login" } },
+    { "path": "pages/member-balance", "style": { "navigationBarTitleText": "Member Assets", "enablePullDownRefresh": false, "onReachBottomDistance": 80 } },
+    { "path": "pages/member-checkin", "style": { "navigationBarTitleText": "Member Checkin" } },
+    { "path": "pages/member-center", "style": { "navigationBarTitleText": "Member Center", "navigationStyle": "custom" } },
+    { "path": "pages/member-club", "style": { "navigationBarTitleText": "Member Club", "navigationStyle": "custom" } },
+    { "path": "pages/all-goods", "style": { "navigationBarTitleText": "All Goods", "navigationStyle": "custom" } },
+    { "path": "pages/messages", "style": { "navigationBarTitleText": "Messages", "navigationStyle": "custom" } },
+    { "path": "pages/message-list", "style": { "navigationBarTitleText": "Message List", "navigationStyle": "custom" } },
+    { "path": "pages/message-detail", "style": { "navigationBarTitleText": "Message Detail", "navigationStyle": "custom" } },
+    { "path": "pages/message-notification", "style": { "navigationBarTitleText": "Message Notification", "navigationStyle": "custom" } },
+    { "path": "pages/escort-list", "style": { "navigationBarTitleText": "Escort Hall", "navigationStyle": "custom" } },
+    { "path": "pages/escort-detail", "style": { "navigationBarTitleText": "Service Detail", "navigationStyle": "custom" } },
+    { "path": "pages/interaction-center", "style": { "navigationBarTitleText": "Interaction", "navigationStyle": "custom" } },
+    { "path": "pages/member-badge-center", "style": { "navigationBarTitleText": "Badge Center", "navigationStyle": "custom" } },
+    { "path": "pages/common/webview/index", "style": { "navigationBarTitleText": "Webview" } },
+    { "path": "pages/common/textview/index", "style": { "navigationBarTitleText": "Textview" } },
+    { "path": "pages/common/detail", "style": { "navigationBarTitleText": "" } }
   ],
   "subPackages": [
     {
       "root": "pages_mine/pages",
       "pages": [
-        {
-          "path": "avatar/index",
-          "style": {
-            "navigationBarTitleText": "修改头像"
-          }
-        },
-        {
-          "path": "info/edit",
-          "style": {
-            "navigationBarTitleText": "编辑资料"
-          }
-        },
-        {
-          "path": "pwd/index",
-          "style": {
-            "navigationBarTitleText": "修改密码"
-          }
-        },
-        {
-          "path": "setting/index",
-          "style": {
-            "navigationBarTitleText": "应用设置"
-          }
-        },
-        {
-          "path": "security/index",
-          "style": {
-            "navigationBarTitleText": "账号与安全"
-          }
-        },
-        {
-          "path": "security/devices",
-          "style": {
-            "navigationBarTitleText": "登录设备"
-          }
-        },
-        {
-          "path": "help/index",
-          "style": {
-            "navigationBarTitleText": "常见问题"
-          }
-        },
-        {
-          "path": "about/index",
-          "style": {
-            "navigationBarTitleText": "关于我们"
-          }
-        },
-        {
-          "path": "follow/index",
-          "style": {
-            "navigationBarTitleText": "关注和粉丝",
-            "navigationStyle": "custom"
-          }
-        },
-        {
-          "path": "user/profile",
-          "style": {
-            "navigationBarTitleText": "用户主页",
-            "navigationStyle": "custom"
-          }
-        }
+        { "path": "avatar/index", "style": { "navigationBarTitleText": "Avatar" } },
+        { "path": "info/edit", "style": { "navigationBarTitleText": "Edit Profile" } },
+        { "path": "pwd/index", "style": { "navigationBarTitleText": "Change Password" } },
+        { "path": "setting/index", "style": { "navigationBarTitleText": "Settings" } },
+        { "path": "security/index", "style": { "navigationBarTitleText": "Security" } },
+        { "path": "security/devices", "style": { "navigationBarTitleText": "Devices" } },
+        { "path": "help/index", "style": { "navigationBarTitleText": "Help" } },
+        { "path": "about/index", "style": { "navigationBarTitleText": "About" } },
+        { "path": "follow/index", "style": { "navigationBarTitleText": "Follow", "navigationStyle": "custom" } },
+        { "path": "user/profile", "style": { "navigationBarTitleText": "User Profile", "navigationStyle": "custom" } }
       ]
     },
     {
       "root": "pages_template/pages",
       "pages": [
-        {
-          "path": "wxCenter/index",
-          "style": {
-            "navigationBarTitleText": "wxCenter 仿微信个人中心",
-            "navigationStyle": "custom"
-          }
-        },
-        {
-          "path": "keyboardPay/index",
-          "style": {
-            "navigationBarTitleText": "keyboardPay 自定义键盘支付"
-          }
-        },
-        {
-          "path": "mallMenu/index2",
-          "style": {
-            "navigationBarTitleText": "mallMenu-商城分类"
-          }
-        },
-        {
-          "path": "mallMenu/index1",
-          "style": {
-            "navigationBarTitleText": "mallMenu-商城分类"
-          }
-        },
-        {
-          "path": "coupon/index",
-          "style": {
-            "navigationBarTitleText": "coupon-优惠券"
-          }
-        },
-        {
-          "path": "login/index1",
-          "style": {
-            "navigationBarTitleText": "美团登录"
-          }
-        },
-        {
-          "path": "login/index2",
-          "style": {
-            "navigationBarTitleText": "水滴登录"
-          }
-        },
-        {
-          "path": "citySelect/index",
-          "style": {
-            "navigationBarTitleText": "城市选择"
-          }
-        },
-        {
-          "path": "submitBar/index",
-          "style": {
-            "navigationBarTitleText": "提交订单栏"
-          }
-        },
-        {
-          "path": "comment/index",
-          "style": {
-            "navigationBarTitleText": "评论"
-          }
-        },
-        {
-          "path": "comment/reply",
-          "style": {
-            "navigationBarTitleText": "评论详情"
-          }
-        },
-        {
-          "path": "order/index",
-          "style": {
-            "navigationBarTitleText": "订单"
-          }
-        },
-        {
-          "path": "login/code",
-          "style": {
-            "navigationBarTitleText": "登录获取验证码"
-          }
-        },
-        {
-          "path": "address/index",
-          "style": {
-            "navigationBarTitleText": "用户地址"
-          }
-        },
-        {
-          "path": "address/addSite",
-          "style": {
-            "navigationBarTitleText": "添加用户地址"
-          }
-        }
+        { "path": "wxCenter/index", "style": { "navigationBarTitleText": "Wx Center", "navigationStyle": "custom" } },
+        { "path": "keyboardPay/index", "style": { "navigationBarTitleText": "Keyboard Pay" } },
+        { "path": "mallMenu/index2", "style": { "navigationBarTitleText": "Mall Category" } },
+        { "path": "mallMenu/index1", "style": { "navigationBarTitleText": "Mall Category" } },
+        { "path": "coupon/index", "style": { "navigationBarTitleText": "Coupon" } },
+        { "path": "login/index1", "style": { "navigationBarTitleText": "Login One" } },
+        { "path": "login/index2", "style": { "navigationBarTitleText": "Login Two" } },
+        { "path": "citySelect/index", "style": { "navigationBarTitleText": "City Select" } },
+        { "path": "submitBar/index", "style": { "navigationBarTitleText": "Submit Bar" } },
+        { "path": "comment/index", "style": { "navigationBarTitleText": "Comment" } },
+        { "path": "comment/reply", "style": { "navigationBarTitleText": "Comment Reply" } },
+        { "path": "order/index", "style": { "navigationBarTitleText": "Order" } },
+        { "path": "login/code", "style": { "navigationBarTitleText": "Code Login" } },
+        { "path": "address/index", "style": { "navigationBarTitleText": "Address" } },
+        { "path": "address/addSite", "style": { "navigationBarTitleText": "Add Address" } }
       ]
     },
     {
       "root": "pages_qiun/pages",
       "pages": [
-        {
-          "path": "sport/index",
-          "style": {
-            "pageOrientation": "auto"
-          }
-        },
-        {
-          "path": "school/index",
-          "style": {
-            "pageOrientation": "auto"
-          }
-        },
-        {
-          "path": "finance/index",
-          "style": {
-            "pageOrientation": "auto"
-          }
-        },
-        {
-          "path": "main/index",
-          "style": {
-            "pageOrientation": "auto"
-          }
-        }
+        { "path": "sport/index", "style": { "pageOrientation": "auto" } },
+        { "path": "school/index", "style": { "pageOrientation": "auto" } },
+        { "path": "finance/index", "style": { "pageOrientation": "auto" } },
+        { "path": "main/index", "style": { "pageOrientation": "auto" } }
       ]
     },
     {
       "root": "pages_geek/pages",
       "pages": [
-        {
-          "path": "index/index"
-        },
-        {
-          "path": "code/index"
-        }
+        { "path": "index/index" },
+        { "path": "code/index" }
+      ]
+    },
+    {
+      "root": "pages_mall/pages",
+      "pages": [
+        { "path": "index", "style": { "navigationBarTitleText": "Mall", "navigationStyle": "custom" } },
+        { "path": "goods/detail", "style": { "navigationBarTitleText": "Goods Detail", "navigationStyle": "custom" } },
+        { "path": "order/list", "style": { "navigationBarTitleText": "Order List", "navigationStyle": "custom" } },
+        { "path": "order/detail", "style": { "navigationBarTitleText": "Order Detail", "navigationStyle": "custom" } }
       ]
     }
   ],
@@ -316,14 +111,10 @@
     "fontSize": "15px",
     "height": "50px",
     "list": [
-      {
-        "pagePath": "pages/index",
-        "text": "首页"
-      },
-      {
-        "pagePath": "pages/mine",
-        "text": "我的"
-      }
+      { "pagePath": "pages/esports-home", "text": "首页" },
+      { "pagePath": "pages/all-goods", "text": "分类" },
+      { "pagePath": "pages/messages", "text": "消息" },
+      { "pagePath": "pages/mine", "text": "我的" }
     ]
   },
   "globalStyle": {

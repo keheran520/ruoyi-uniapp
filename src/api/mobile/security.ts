@@ -1,116 +1,83 @@
 import request from '@/utils/request'
 
-/**
- * 绑定安全手机
- */
-export function bindPhone(data) {
+export function bindPhone(data: Record<string, any>) {
   return request({
     url: '/system/user/security/bindPhone',
-    method: 'post',
-    data: data
+    method: 'POST',
+    data
   })
 }
 
-/**
- * 解绑安全手机
- */
-export function unbindPhone(data) {
+export function unbindPhone(data: Record<string, any>) {
   return request({
     url: '/system/user/security/unbindPhone',
-    method: 'post',
-    data: data
+    method: 'POST',
+    data
   })
 }
 
-/**
- * 绑定安全邮箱
- */
-export function bindEmail(data) {
+export function bindEmail(data: Record<string, any>) {
   return request({
     url: '/system/user/security/bindEmail',
-    method: 'post',
-    data: data
+    method: 'POST',
+    data
   })
 }
 
-/**
- * 解绑安全邮箱
- */
-export function unbindEmail(data) {
+export function unbindEmail(data: Record<string, any>) {
   return request({
     url: '/system/user/security/unbindEmail',
-    method: 'post',
-    data: data
+    method: 'POST',
+    data
   })
 }
 
-/**
- * 发送号码认证验证码（推荐使用）
- */
-export function sendPhoneVerifyCode(phonenumber, businessType = 'bind', captchaId) {
+export function sendPhoneVerifyCode(phonenumber: string, businessType = 'bind', captchaId?: string) {
   return request({
     url: '/resource/phoneverify/code',
-    method: 'get',
+    method: 'GET',
     params: { phonenumber, businessType, captchaId }
   })
 }
 
-/**
- * 发送手机短信验证码（备用）
- */
-export function sendPhoneSmsCode(phonenumber) {
+export function sendPhoneSmsCode(phonenumber: string) {
   return request({
     url: '/resource/sms/code',
-    method: 'get',
+    method: 'GET',
     params: { phonenumber }
   })
 }
 
-/**
- * 发送邮箱验证码
- * @param email 邮箱地址
- * @param businessType 业务类型（可选，默认为 login）
- * @param captchaId 行为验证码ID（可选）
- */
-export function sendEmailCode(email, businessType = 'login', captchaId) {
+export function sendEmailCode(email: string, businessType = 'login', captchaId?: string) {
   return request({
     url: '/resource/email/code',
-    method: 'get',
+    method: 'GET',
     params: { email, businessType, captchaId }
   })
 }
 
-/**
- * 获取在线设备列表
- */
 export function getOnlineDevices() {
   return request({
     url: '/monitor/online',
-    method: 'get'
+    method: 'GET'
   })
 }
 
-/**
- * 删除在线设备
- */
-export function delOnline(tokenId) {
+export function delOnline(tokenId: string | number) {
   return request({
     url: `/monitor/online/myself/${tokenId}`,
-    method: 'delete'
+    method: 'DELETE'
   })
 }
 
-/**
- * 修改密码
- */
-export function updatePassword(data) {
+export function updatePassword(data: Record<string, any>) {
   return request({
     url: '/system/user/profile/updatePwd',
-    method: 'put',
+    method: 'PUT',
     headers: {
       isEncrypt: true,
       repeatSubmit: false
     },
-    data: data
+    data
   })
 }

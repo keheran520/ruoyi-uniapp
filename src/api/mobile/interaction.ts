@@ -1,6 +1,16 @@
 import request from '@/utils/request'
 
 /**
+ * 获取互动概览
+ */
+export function getInteractionSummary() {
+  return request({
+    url: '/mobile/interaction/summary',
+    method: 'GET'
+  })
+}
+
+/**
  * 获取我的图片列表
  */
 export function getMyImages(params: any) {

@@ -1,6 +1,5 @@
 import request from '@/utils/request'
 
-/** 获取会员信息（含等级名称等） */
 export function getMemberInfo() {
   return request({
     url: '/mobile/member/info',
@@ -8,7 +7,6 @@ export function getMemberInfo() {
   })
 }
 
-/** 会员详情 */
 export function getMemberDetail() {
   return request({
     url: '/mobile/member/detail',
@@ -16,7 +14,6 @@ export function getMemberDetail() {
   })
 }
 
-/** 更新会员资料 */
 export function updateMember(data: Record<string, unknown>) {
   return request({
     url: '/mobile/member/update',
@@ -25,7 +22,6 @@ export function updateMember(data: Record<string, unknown>) {
   })
 }
 
-/** 首次注册会员 */
 export function registerMember(data: Record<string, unknown>) {
   return request({
     url: '/mobile/member/register',
@@ -48,7 +44,6 @@ export function getPoints() {
   })
 }
 
-/** 余额变动记录 */
 export function getBalanceLog(params: { pageNum?: number; pageSize?: number }) {
   return request({
     url: '/mobile/member/balance/log',
@@ -57,7 +52,6 @@ export function getBalanceLog(params: { pageNum?: number; pageSize?: number }) {
   })
 }
 
-/** 积分变动记录 */
 export function getPointsLog(params: { pageNum?: number; pageSize?: number }) {
   return request({
     url: '/mobile/member/points/log',
@@ -66,7 +60,6 @@ export function getPointsLog(params: { pageNum?: number; pageSize?: number }) {
   })
 }
 
-/** 成长值变动记录 */
 export function getGrowthLog(params: { pageNum?: number; pageSize?: number }) {
   return request({
     url: '/mobile/member/growth/log',
@@ -75,7 +68,6 @@ export function getGrowthLog(params: { pageNum?: number; pageSize?: number }) {
   })
 }
 
-/** 启用的会员等级列表 */
 export function getLevelList() {
   return request({
     url: '/mobile/member/level/list',
@@ -93,6 +85,13 @@ export function checkin() {
 export function getCheckinStatus() {
   return request({
     url: '/mobile/member/checkin/status',
+    method: 'GET'
+  })
+}
+
+export function getCheckinSummary() {
+  return request({
+    url: '/mobile/member/checkin/summary',
     method: 'GET'
   })
 }

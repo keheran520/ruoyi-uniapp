@@ -1,12 +1,14 @@
+import { createStore } from 'vuex'
 import user from '@/store/modules/user'
 import website from '@/store/modules/website'
 import getters from './getters'
-import { createStore } from "vuex";
-const store = createStore({
+
+const store = createStore<any>({
   modules: {
     user,
-    website,
+    website
   },
   getters
-});
-export default store;
+})
+
+export default store

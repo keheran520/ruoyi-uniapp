@@ -1,0 +1,18 @@
+<svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="18.000000" height="18.000000" fill="none" customFrame="#000000">
+	<defs>
+		<filter id="pixso_custom_mask_type_outline">
+			<feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0 " />
+		</filter>
+	</defs>
+	<mask id="mask_1" width="18.000000" height="18.000000" x="0.000000" y="0.000000" maskUnits="userSpaceOnUse">
+		<g filter="url(#pixso_custom_mask_type_outline)">
+			<rect id="添加" width="18.000000" height="18.000000" x="0.000000" y="0.000000" fill="rgb(255,255,255)" />
+		</g>
+	</mask>
+	<g id="添加" showMaskRef="url(#show_mask_1)" mask="url(#mask_1)">
+		<rect id="show_mask_1" width="18.000000" height="18.000000" x="0.000000" y="0.000000" fill="rgb(255,255,255)" fill-opacity="0.00392156886" />
+		<path id="路径" d="M0 0L18 0L18 18L0 18L0 0Z" fill-rule="evenodd" />
+		<path id="路径" d="M8.09936 15.7949C7.85803 15.5547 7.72644 15.2383 7.72644 14.9004L7.72644 10.2754L3.10559 10.2754C2.39905 10.2754 1.82861 9.70508 1.82861 8.99804C1.82861 8.29688 2.39905 7.72656 3.10559 7.72656L7.72644 7.72656L7.72644 3.10546C7.72644 2.39844 8.29687 1.82812 8.99902 1.82812C9.70556 1.82812 10.276 2.39844 10.276 3.10546L10.276 7.72656L14.8968 7.72656C15.5989 7.72656 16.1738 8.29688 16.1738 8.99804C16.1738 9.33594 16.0421 9.65624 15.8008 9.90234C15.5594 10.1445 15.2391 10.2754 14.8968 10.2754L10.276 10.2754L10.276 14.8965C10.276 15.5976 9.70556 16.1738 8.99902 16.1738C8.65673 16.1738 8.34082 16.0371 8.09936 15.7949Z" fill="rgb(255,137,172)" fill-rule="evenodd" />
+		<path id="路径" d="M0 0L18 0L18 18L0 18L0 0Z" fill-rule="evenodd" />
+	</g>
+</svg>
